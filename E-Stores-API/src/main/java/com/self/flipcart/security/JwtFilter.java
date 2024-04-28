@@ -39,7 +39,6 @@ public class JwtFilter extends OncePerRequestFilter {
         Cookie[] cookies = request.getCookies();
         if (cookies != null)
             for (Cookie cookie : cookies) {
-                System.out.println("at: " + cookie.getValue());
                 if (cookie.getName().equals("at")) accessToken = cookie.getValue();
             }
 
@@ -61,7 +60,6 @@ public class JwtFilter extends OncePerRequestFilter {
                         null, Collections.singleton(new SimpleGrantedAuthority(role)));
                 token.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
-                System.out.println(SecurityContextHolder.getContext().getAuthentication().getName());
                 log.info("JWT Authentication Successful");
             }
 
