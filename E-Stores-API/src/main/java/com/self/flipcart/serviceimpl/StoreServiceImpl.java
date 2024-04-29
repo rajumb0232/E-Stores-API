@@ -38,10 +38,10 @@ public class StoreServiceImpl implements StoreService {
                             Store uniqueStore = storeRepo.save(store);
                             seller.setStore(uniqueStore);
                             sellerRepo.save(seller);
-                            return new ResponseEntity<>(new ResponseStructure<Store>()
+                            return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseStructure<Store>()
                                     .setStatus(HttpStatus.CREATED.value())
                                     .setMessage("Store Created Successfully")
-                                    .setData(uniqueStore), HttpStatus.CREATED);
+                                    .setData(uniqueStore));
                         }).get()).orElseThrow();
     }
 
@@ -53,20 +53,20 @@ public class StoreServiceImpl implements StoreService {
             store.setTopCategory(exStore.getTopCategory());
             Store uniqueStore = storeRepo.save(store);
 
-            return new ResponseEntity<>(new ResponseStructure<Store>()
+            return ResponseEntity.ok(new ResponseStructure<Store>()
                     .setStatus(HttpStatus.OK.value())
                     .setMessage("Store Created Successfully")
-                    .setData(uniqueStore), HttpStatus.OK);
+                    .setData(uniqueStore));
         }).orElseThrow();
     }
 
     @Override
     public ResponseEntity<ResponseStructure<StoreResponse>> getStore(String storeId) {
         return storeRepo.findById(storeId)
-                .map(store -> new ResponseEntity<>(new ResponseStructure<StoreResponse>()
+                .map(store -> ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<StoreResponse>()
                         .setStatus(HttpStatus.FOUND.value())
                         .setMessage("Store data found")
-                        .setData(StoreMapper.mapToStorePageResponse(store)), HttpStatus.FOUND))
+                        .setData(StoreMapper.mapToStorePageResponse(store))))
                 .orElseThrow(() -> new StoreNotFoundByIdException("Failed to find the store data"));
     }
 
@@ -88,10 +88,10 @@ public class StoreServiceImpl implements StoreService {
                 .map(user -> sellerRepo.findById(user.getUserId())
                         .map(seller -> {
                             if (seller.getStore() != null) {
-                                return new ResponseEntity<>(new ResponseStructure<StoreResponse>()
+                                return ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<StoreResponse>()
                                         .setStatus(HttpStatus.FOUND.value())
                                         .setMessage("Store found")
-                                        .setData(StoreMapper.mapToStorePageResponse(seller.getStore())), HttpStatus.FOUND);
+                                        .setData(StoreMapper.mapToStorePageResponse(seller.getStore())));
                             } else throw new RuntimeException("No Store found associated with seller");
                         }).get())
                 .orElseThrow();

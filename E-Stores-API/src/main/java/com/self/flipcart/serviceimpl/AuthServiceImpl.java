@@ -100,10 +100,12 @@ public class AuthServiceImpl implements AuthService {
         otpCache.add(otp.getEmail(), otp);
         try {
             sendOTPToMailId(user, otp.getOtp());
-            return new ResponseEntity<>(new ResponseStructure<UserResponse>()
-                    .setStatus(HttpStatus.ACCEPTED.value())
-                    .setMessage("user registration successful. Please check your email for OTP")
-                    .setData(mapToUserResponse(user)), HttpStatus.ACCEPTED);
+            return ResponseEntity
+                    .status(HttpStatus.ACCEPTED)
+                    .body(new ResponseStructure<UserResponse>()
+                            .setStatus(HttpStatus.ACCEPTED.value())
+                            .setMessage("user registration successful. Please check your email for OTP")
+                            .setData(mapToUserResponse(user)));
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to verify the email ID");
         }
@@ -121,10 +123,12 @@ public class AuthServiceImpl implements AuthService {
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
-            return new ResponseEntity<>(new ResponseStructure<UserResponse>()
-                    .setStatus(HttpStatus.OK.value())
-                    .setMessage("User registration successful")
-                    .setData(mapToUserResponse(user)), HttpStatus.OK);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseStructure<UserResponse>()
+                            .setStatus(HttpStatus.OK.value())
+                            .setMessage("User registration successful")
+                            .setData(mapToUserResponse(user)));
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to send confirmation mail");
         }

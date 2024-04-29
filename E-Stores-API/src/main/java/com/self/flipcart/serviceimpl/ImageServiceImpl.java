@@ -29,9 +29,9 @@ public class ImageServiceImpl implements ImageService {
     public ResponseEntity<ResponseStructure<String>> addStoreImage(String storeId, MultipartFile image) {
         System.err.println(storeId);
         return storeRepo.findById(storeId).map(store -> {
-            if(store.getLogoLink() != null){
-            String[] a = store.getLogoLink().split("/");
-            imageRepo.deleteById(a[a.length-1]);
+            if (store.getLogoLink() != null) {
+                String[] a = store.getLogoLink().split("/");
+                imageRepo.deleteById(a[a.length - 1]);
             }
             StoreImage storeImage = new StoreImage();
             storeImage.setStoreId(storeId);
@@ -45,8 +45,8 @@ public class ImageServiceImpl implements ImageService {
             Image i = imageRepo.save(storeImage);
             store.setLogoLink("/images/" + i.getImageId());
             storeRepo.save(store);
-            return new ResponseEntity<>(new ResponseStructure<String>().setStatus(HttpStatus.OK.value())
-                    .setMessage("Successfully save image").setData("/images/" + i.getImageId()), HttpStatus.OK);
+            return ResponseEntity.ok(new ResponseStructure<String>().setStatus(HttpStatus.OK.value())
+                    .setMessage("Successfully save image").setData("/images/" + i.getImageId()));
         }).orElseThrow();
     }
 

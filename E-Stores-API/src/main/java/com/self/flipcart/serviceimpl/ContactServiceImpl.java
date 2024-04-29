@@ -27,10 +27,10 @@ public class ContactServiceImpl implements ContactService {
             Contact contact = ContactMapper.mapToContactEntity(contactRequest, new Contact());
             contact.setAddress(address);
             contact = contactRepo.save(contact);
-            return new ResponseEntity<>(new ResponseStructure<List<Contact>>()
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseStructure<List<Contact>>()
                     .setStatus(HttpStatus.CREATED.value())
                     .setMessage("Successfully saved contact")
-                    .setData(contactRepo.findAllByAddress(contact.getAddress())), HttpStatus.CREATED);
+                    .setData(contactRepo.findAllByAddress(contact.getAddress())));
         }).orElseThrow();
     }
 
@@ -38,19 +38,21 @@ public class ContactServiceImpl implements ContactService {
     public ResponseEntity<ResponseStructure<List<Contact>>> updateContact(ContactRequest contactRequest, String contactId) {
         return contactRepo.findById(contactId).map(c -> {
             Contact contact = contactRepo.save(ContactMapper.mapToContactEntity(contactRequest, c));
-            return new ResponseEntity<>(new ResponseStructure<List<Contact>>()
+            return ResponseEntity.ok(new ResponseStructure<List<Contact>>()
                     .setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully updated contact")
-                    .setData(contactRepo.findAllByAddress(contact.getAddress())), HttpStatus.OK);
+                    .setData(contactRepo.findAllByAddress(contact.getAddress())));
         }).orElseThrow();
     }
 
     @Override
     public ResponseEntity<ResponseStructure<Contact>> getContactById(String contactId) {
-        return contactRepo.findById(contactId).map(contact -> new ResponseEntity<>(new ResponseStructure<Contact>()
-                .setStatus(HttpStatus.FOUND.value())
-                .setMessage("contact found")
-                .setData(contact), HttpStatus.FOUND)).orElseThrow();
+        return contactRepo.findById(contactId).map(contact -> ResponseEntity
+                .status(HttpStatus.FOUND)
+                .body(new ResponseStructure<Contact>()
+                        .setStatus(HttpStatus.FOUND.value())
+                        .setMessage("contact found")
+                        .setData(contact))).orElseThrow();
     }
 
     @Override
