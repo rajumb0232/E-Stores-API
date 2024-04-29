@@ -13,11 +13,13 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping("/api/fkv1")
 @CrossOrigin(allowCredentials = "true", origins = "http://localhost:5173/")
-public class AuthController {
+public class AuthController extends ResponseEntityExceptionHandler {
 
     private AuthService authService;
 
@@ -46,9 +48,11 @@ public class AuthController {
         return authService.logout(refreshToken, accessToken);
     }
 
-    @PostMapping("/login/refresh")
+    @PostMapping("/refresh")
+    @PreAuthorize("hasAuthority('ADMIN') OR hasAuthority('SUPER_ADMIN') OR hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
     public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(@CookieValue(name = "rt", required = false) String refreshToken,
                                                                         @CookieValue(name = "at", required = false) String accessToken) {
+        System.err.println("In Refresh Login Handler Method.");
         return authService.refreshLogin(refreshToken, accessToken);
     }
 

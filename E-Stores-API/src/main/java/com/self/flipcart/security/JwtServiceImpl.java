@@ -55,8 +55,7 @@ public class JwtServiceImpl implements JwtService {
     // parsing JWT
 
     public String extractUsername(String token) {
-        log.info("Extracting username...");
-        return extractClaim(parseClaims(token), Claims::getSubject);
+        return extractClaim(token, Claims::getSubject);
     }
 
     @Override
@@ -64,20 +63,26 @@ public class JwtServiceImpl implements JwtService {
         return parseClaims(token).get("role", String.class);
     }
 
+    @Override
     public Date extractExpiry(String token){
-        return extractClaim(parseClaims(token), Claims::getExpiration);
+        return extractClaim(token, Claims::getExpiration);
     }
 
-    private <R> R extractClaim(Claims parsedClaims, Function<Claims, R> claimResolver) {
-        return claimResolver.apply(parsedClaims);
+    @Override
+    public Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
+    }
+
+    private <R> R extractClaim(String token, Function<Claims, R> claimResolver) {
+        return claimResolver.apply(parseClaims(token));
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignatureKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignatureKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
     }
 
 

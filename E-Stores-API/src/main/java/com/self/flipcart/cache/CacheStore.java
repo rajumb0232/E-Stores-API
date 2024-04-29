@@ -23,7 +23,6 @@ public class CacheStore<T> {
 
     public void add(String key, T value){
         cache.put(key, value);
-        log.info("Cache added with the key: "+key);
     }
 
     public void remove(String key){

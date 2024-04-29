@@ -13,4 +13,6 @@ public interface JwtService {
     String extractUserRole(String token);
 
     Date extractExpiry(String token);
+
+    Date extractIssuedAt(String refreshToken);
 }

@@ -8,7 +8,6 @@ import com.self.flipcart.exceptions.*;
 import com.self.flipcart.model.*;
 import com.self.flipcart.repository.AccessTokenRepo;
 import com.self.flipcart.repository.RefreshTokenRepo;
-import com.self.flipcart.repository.SellerRepo;
 import com.self.flipcart.repository.UserRepo;
 import com.self.flipcart.requestdto.AuthRequest;
 import com.self.flipcart.requestdto.UserRequest;
@@ -19,6 +18,10 @@ import com.self.flipcart.service.AuthService;
 import com.self.flipcart.util.CookieManager;
 import com.self.flipcart.util.ResponseStructure;
 import com.self.flipcart.util.SimpleResponseStructure;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +48,6 @@ import java.util.stream.Collectors;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private SellerRepo sellerRepo;
     private UserRepo userRepo;
     private AccessTokenRepo accessTokenRepo;
     private RefreshTokenRepo refreshTokenRepo;
@@ -56,13 +58,11 @@ public class AuthServiceImpl implements AuthService {
     private JavaMailSender javaMailSender;
     private CacheStore<OtpModel> otpCache;
     private CacheStore<User> userCacheStore;
-    private CacheStore<Attempt> attemptCacheStore;
     private JwtService jwtService;
     private AuthenticationManager authenticationManager;
     private CookieManager cookieManager;
 
-    public AuthServiceImpl(SellerRepo sellerRepo,
-                           UserRepo userRepo,
+    public AuthServiceImpl(UserRepo userRepo,
                            AccessTokenRepo accessTokenRepo,
                            RefreshTokenRepo refreshTokenRepo,
                            ResponseStructure<UserResponse> structure,
@@ -72,11 +72,9 @@ public class AuthServiceImpl implements AuthService {
                            JavaMailSender javaMailSender,
                            CacheStore<OtpModel> otpCache,
                            CacheStore<User> userCacheStore,
-                           CacheStore<Attempt> attemptCacheStore,
                            JwtService jwtService,
                            AuthenticationManager authenticationManager,
                            CookieManager cookieManager) {
-        this.sellerRepo = sellerRepo;
         this.userRepo = userRepo;
         this.accessTokenRepo = accessTokenRepo;
         this.refreshTokenRepo = refreshTokenRepo;
@@ -87,7 +85,6 @@ public class AuthServiceImpl implements AuthService {
         this.javaMailSender = javaMailSender;
         this.otpCache = otpCache;
         this.userCacheStore = userCacheStore;
-        this.attemptCacheStore = attemptCacheStore;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
         this.cookieManager = cookieManager;
@@ -133,10 +130,10 @@ public class AuthServiceImpl implements AuthService {
         userRepo.save(user);
         otpCache.remove(otpModel.getEmail());
         try {
-        sendConfirmationMail(user);
-        return new ResponseEntity<>(structure.setStatus(HttpStatus.OK.value())
-                .setMessage("User registration successful")
-                .setData(mapToUserResponse(user)), HttpStatus.OK);
+            sendConfirmationMail(user);
+            return new ResponseEntity<>(structure.setStatus(HttpStatus.OK.value())
+                    .setMessage("User registration successful")
+                    .setData(mapToUserResponse(user)), HttpStatus.OK);
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to send confirmation mail");
         }
@@ -151,13 +148,65 @@ public class AuthServiceImpl implements AuthService {
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
 
         // validating if the user authentication is authenticated
-        if (auth.isAuthenticated()) return userRepo.findByUsername(username).map(this::generateAuthResponse).get();
+        if (auth.isAuthenticated()) return userRepo.findByUsername(username).map(user -> {
+            HttpHeaders headers = new HttpHeaders();
+            generateAccessToken(user, headers);
+            generateRefreshToken(user, headers);
+            return ResponseEntity.ok().headers(headers).body(authStructure.setStatus(HttpStatus.OK.value())
+                    .setMessage("Login refreshed successfully")
+                    .setData(AuthResponse.builder()
+                            .userId(user.getUserId())
+                            .username(user.getUsername())
+                            .role(user.getUserRole().name())
+                            .isAuthenticated(true)
+                            .accessExpiration(accessTokenExpirySeconds)
+                            .refreshExpiration(refreshTokenExpirySeconds)
+                            .build()));
+        }).orElseThrow(() -> new UsernameNotFoundException("Failed to refresh login"));
         else throw new UsernameNotFoundException("Authentication failed");
     }
 
-    private ResponseEntity<ResponseStructure<AuthResponse>> generateAuthResponse(User user){
-        // granting access to User with new access and refresh token cookies in response
-        HttpHeaders headers = grantAccessToUser(user);
+    @Override
+    public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken) {
+        if (refreshToken == null) throw new UserNotLoggedInException("Failed to refresh login");
+
+        String username = jwtService.extractUsername(refreshToken);
+        Date refreshExpiration = jwtService.extractExpiry(refreshToken);
+        Date refreshIssuedAt = jwtService.extractIssuedAt(refreshToken);
+        Date accessExpiration = null;
+
+        /* set accessToken to null if the token is invalid,
+        ensuring the that there are no unnecessary exception thrown to the user
+         */
+        try {
+            accessExpiration = accessToken != null ? jwtService.extractExpiry(accessToken) : null;
+        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
+            accessToken = null;
+        }
+
+        // getting the leftover expiration duration for refresh token and access token
+        long evaluatedAccessExpiration = accessExpiration != null
+                ? accessTokenExpirySeconds - ((new Date().getTime() - accessExpiration.getTime()) / 1000)
+                : accessTokenExpirySeconds;
+        boolean newRefreshRequired = refreshIssuedAt.before(new Date()) && (refreshIssuedAt.getTime() - new Date().getTime()) > 24 * 60 * 60 * 1000;
+        long evaluatedRefreshExpiration = newRefreshRequired
+                ? refreshTokenExpirySeconds
+                : refreshTokenExpirySeconds - ((new Date().getTime() - refreshExpiration.getTime()) / 1000);
+
+        HttpHeaders headers = new HttpHeaders();
+
+        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Failed to refresh login"));
+        // validating if the accessToken is not already present
+        if (accessToken == null) this.generateAccessToken(user, headers);
+
+        // validating if the refresh token was issued before 24 hours.
+        if (newRefreshRequired) {
+            // blocking old token
+            this.blockRefreshToken(refreshToken);
+            // generating new refresh token
+            this.generateRefreshToken(user, headers);
+        }
+
         return ResponseEntity.ok().headers(headers).body(authStructure.setStatus(HttpStatus.OK.value())
                 .setMessage("Login refreshed successfully")
                 .setData(AuthResponse.builder()
@@ -165,31 +214,9 @@ public class AuthServiceImpl implements AuthService {
                         .username(user.getUsername())
                         .role(user.getUserRole().name())
                         .isAuthenticated(true)
-                        .accessExpiration(accessTokenExpirySeconds)
-                        .refreshExpiration(refreshTokenExpirySeconds)
+                        .accessExpiration(evaluatedAccessExpiration)
+                        .refreshExpiration(evaluatedRefreshExpiration)
                         .build()));
-    }
-
-    @Override
-    public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken) {
-        if (refreshToken == null) throw new UserNotLoggedInException("Failed to refresh login");
-        Attempt attempt = attemptCacheStore.get(refreshToken);
-        if (attempt != null)
-            if (attempt.getLastAttemptedAt().isAfter(LocalDateTime.now()))
-                throw new TooManyAttemptsException("Failed to refresh login");
-            else attemptCacheStore.add(refreshToken, new Attempt(LocalDateTime.now().plusSeconds(10)));
-        if (accessToken != null) blockAccessToken(accessToken);
-
-        String username = refreshTokenRepo.findByToken(refreshToken).map(rt -> {
-            if (rt.isBlocked()) throw new UserNotLoggedInException("Failed to refresh login");
-            else return jwtService.extractUsername(refreshToken);
-        }).orElseThrow(() -> new UserNotLoggedInException("Failed to refresh login"));
-        return userRepo.findByUsername(username).map(user -> {
-            // blocking old token
-            blockRefreshToken(refreshToken);
-            return generateAuthResponse(user);
-
-        }).orElseThrow(() -> new UsernameNotFoundException("Failed to refresh login"));
     }
 
     @Override
@@ -260,31 +287,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /* ----------------------------------------------------------------------------------------------------------- */
-    private HttpHeaders grantAccessToUser(User user) {
-        //generating access and refresh tokens
-        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getUserRole().name());
+    private void generateAccessToken(User user, HttpHeaders headers) {
+        //generating access token
         String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getUserRole().name());
 
-        attemptCacheStore.add(newRefreshToken, new Attempt(LocalDateTime.now()));
-
         // adding cookies to the HttpHeaders
-        HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
-        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
 
-        // saving access and refresh tokens to the database
+        // saving access token to the database
         accessTokenRepo.save(AccessToken.builder()
                 .isBlocked(false)
                 .token(newAccessToken)
                 .expiration(LocalDateTime.now().plusSeconds(accessTokenExpirySeconds))
                 .user(user).build());
+    }
+
+    private void generateRefreshToken(User user, HttpHeaders headers) {
+        //generating access token
+        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getUserRole().name());
+
+        // adding cookies to the HttpHeaders
+        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
+
+        // saving refresh token to the database
         refreshTokenRepo.save(RefreshToken.builder()
                 .isBlocked(false)
                 .token(newRefreshToken)
                 .expiration(LocalDateTime.now().plusSeconds(refreshTokenExpirySeconds))
                 .user(user).build());
-
-        return headers;
     }
 
     private void blockAccessToken(String accessToken) {
@@ -318,12 +348,11 @@ public class AuthServiceImpl implements AuthService {
             case CUSTOMER -> user = new Customer();
             default -> throw new InvalidUserRoleException("Failed to process the request");
         }
-        if(user != null){
-            user.setUsername(userRequest.getEmail().split("@")[0]);
-            user.setEmail(userRequest.getEmail());
-            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-            user.setUserRole(userRequest.getUserRole());
-        }
+        user.setUsername(userRequest.getEmail().split("@")[0]);
+        user.setEmail(userRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+        user.setUserRole(userRequest.getUserRole());
+
         return (T) user;
     }
 
