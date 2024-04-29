@@ -16,7 +16,7 @@ public class ImageController {
     private ImageService imageService;
 
     @PostMapping("/stores/{storeId}/images")
-    private ResponseEntity<ResponseStructure> addStoreImage(@PathVariable String storeId, MultipartFile image){
+    private ResponseEntity<ResponseStructure<String>> addStoreImage(@PathVariable String storeId, MultipartFile image){
         return imageService.addStoreImage(storeId, image);
     }
 

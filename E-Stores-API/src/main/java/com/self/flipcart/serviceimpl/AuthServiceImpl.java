@@ -1,7 +1,6 @@
 package com.self.flipcart.serviceimpl;
 
 import com.self.flipcart.cache.CacheStore;
-import com.self.flipcart.dto.Attempt;
 import com.self.flipcart.dto.MessageData;
 import com.self.flipcart.dto.OtpModel;
 import com.self.flipcart.exceptions.*;
@@ -51,9 +50,6 @@ public class AuthServiceImpl implements AuthService {
     private UserRepo userRepo;
     private AccessTokenRepo accessTokenRepo;
     private RefreshTokenRepo refreshTokenRepo;
-    private ResponseStructure<UserResponse> structure;
-    private ResponseStructure<AuthResponse> authStructure;
-    private SimpleResponseStructure simpleResponseStructure;
     private PasswordEncoder passwordEncoder;
     private JavaMailSender javaMailSender;
     private CacheStore<OtpModel> otpCache;
@@ -65,9 +61,6 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(UserRepo userRepo,
                            AccessTokenRepo accessTokenRepo,
                            RefreshTokenRepo refreshTokenRepo,
-                           ResponseStructure<UserResponse> structure,
-                           ResponseStructure<AuthResponse> authStructure,
-                           SimpleResponseStructure simpleResponseStructure,
                            PasswordEncoder passwordEncoder,
                            JavaMailSender javaMailSender,
                            CacheStore<OtpModel> otpCache,
@@ -78,9 +71,6 @@ public class AuthServiceImpl implements AuthService {
         this.userRepo = userRepo;
         this.accessTokenRepo = accessTokenRepo;
         this.refreshTokenRepo = refreshTokenRepo;
-        this.structure = structure;
-        this.authStructure = authStructure;
-        this.simpleResponseStructure = simpleResponseStructure;
         this.passwordEncoder = passwordEncoder;
         this.javaMailSender = javaMailSender;
         this.otpCache = otpCache;
@@ -110,10 +100,10 @@ public class AuthServiceImpl implements AuthService {
         otpCache.add(otp.getEmail(), otp);
         try {
             sendOTPToMailId(user, otp.getOtp());
-            return new ResponseEntity<>(
-                    structure.setStatus(HttpStatus.ACCEPTED.value())
-                            .setMessage("user registration successful. Please check your email for OTP")
-                            .setData(mapToUserResponse(user)), HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(new ResponseStructure<UserResponse>()
+                    .setStatus(HttpStatus.ACCEPTED.value())
+                    .setMessage("user registration successful. Please check your email for OTP")
+                    .setData(mapToUserResponse(user)), HttpStatus.ACCEPTED);
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to verify the email ID");
         }
@@ -131,7 +121,8 @@ public class AuthServiceImpl implements AuthService {
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
-            return new ResponseEntity<>(structure.setStatus(HttpStatus.OK.value())
+            return new ResponseEntity<>(new ResponseStructure<UserResponse>()
+                    .setStatus(HttpStatus.OK.value())
                     .setMessage("User registration successful")
                     .setData(mapToUserResponse(user)), HttpStatus.OK);
         } catch (MessagingException e) {
@@ -152,7 +143,8 @@ public class AuthServiceImpl implements AuthService {
             HttpHeaders headers = new HttpHeaders();
             generateAccessToken(user, headers);
             generateRefreshToken(user, headers);
-            return ResponseEntity.ok().headers(headers).body(authStructure.setStatus(HttpStatus.OK.value())
+            return ResponseEntity.ok().headers(headers).body(new ResponseStructure<AuthResponse>()
+                    .setStatus(HttpStatus.OK.value())
                     .setMessage("Login refreshed successfully")
                     .setData(AuthResponse.builder()
                             .userId(user.getUserId())
@@ -207,7 +199,8 @@ public class AuthServiceImpl implements AuthService {
             this.generateRefreshToken(user, headers);
         }
 
-        return ResponseEntity.ok().headers(headers).body(authStructure.setStatus(HttpStatus.OK.value())
+        return ResponseEntity.ok().headers(headers).body(new ResponseStructure<AuthResponse>()
+                .setStatus(HttpStatus.OK.value())
                 .setMessage("Login refreshed successfully")
                 .setData(AuthResponse.builder()
                         .userId(user.getUserId())
@@ -230,7 +223,7 @@ public class AuthServiceImpl implements AuthService {
         blockAccessToken(accessToken);
         blockRefreshToken(refreshToken);
 
-        return ResponseEntity.ok().headers(headers).body(simpleResponseStructure.setStatus(HttpStatus.OK.value())
+        return ResponseEntity.ok().headers(headers).body(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
                 .setMessage("Logout Successful"));
     }
 
@@ -255,7 +248,7 @@ public class AuthServiceImpl implements AuthService {
                     }).collect(Collectors.toList());
             refreshTokenRepo.saveAll(refreshTokens);
 
-            return ResponseEntity.ok(simpleResponseStructure.setStatus(HttpStatus.OK.value())
+            return ResponseEntity.ok(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully revoked access from all other devices"));
 
         }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
@@ -280,7 +273,7 @@ public class AuthServiceImpl implements AuthService {
             headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
             headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
 
-            return ResponseEntity.ok().headers(headers).body(simpleResponseStructure.setStatus(HttpStatus.OK.value())
+            return ResponseEntity.ok().headers(headers).body(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully revoked access from all devices"));
 
         }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));

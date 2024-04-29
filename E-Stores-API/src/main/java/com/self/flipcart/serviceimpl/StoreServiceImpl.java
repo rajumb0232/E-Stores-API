@@ -24,43 +24,47 @@ public class StoreServiceImpl implements StoreService {
     private UserRepo userRepo;
     private SellerRepo sellerRepo;
     private StoreRepo storeRepo;
-    private ResponseStructure<StoreResponse> basicStructure;
-    private ResponseStructure<Store> structure;
 
     @Override
     public ResponseEntity<ResponseStructure<Store>> setUpStore(StoreRequest storeRequest) {
         if (storeRequest.getCategory() == null)
             throw new InvalidPrimeCategoryException("Failed to update the store data");
+
         Store store = StoreMapper.mapToStoreEntity(storeRequest, new Store());
-        return userRepo.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).map(user -> sellerRepo.findById(user.getUserId())
-                .map(seller -> {
-                    Store uniqueStore = storeRepo.save(store);
-                    seller.setStore(uniqueStore);
-                    sellerRepo.save(seller);
-                    return new ResponseEntity<>(
-                            structure.setStatus(HttpStatus.CREATED.value())
+
+        return userRepo.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName())
+                .map(user -> sellerRepo.findById(user.getUserId())
+                        .map(seller -> {
+                            Store uniqueStore = storeRepo.save(store);
+                            seller.setStore(uniqueStore);
+                            sellerRepo.save(seller);
+                            return new ResponseEntity<>(new ResponseStructure<Store>()
+                                    .setStatus(HttpStatus.CREATED.value())
                                     .setMessage("Store Created Successfully")
                                     .setData(uniqueStore), HttpStatus.CREATED);
-                }).get()).orElseThrow();
+                        }).get()).orElseThrow();
     }
 
     @Override
     public ResponseEntity<ResponseStructure<Store>> updateStore(StoreRequest storeRequest, String storeId) {
         return storeRepo.findById(storeId).map(exStore -> {
+
             Store store = StoreMapper.mapToStoreEntity(storeRequest, exStore);
             store.setTopCategory(exStore.getTopCategory());
             Store uniqueStore = storeRepo.save(store);
-            return new ResponseEntity<>(
-                    structure.setStatus(HttpStatus.OK.value())
-                            .setMessage("Store Created Successfully")
-                            .setData(uniqueStore), HttpStatus.OK);
+
+            return new ResponseEntity<>(new ResponseStructure<Store>()
+                    .setStatus(HttpStatus.OK.value())
+                    .setMessage("Store Created Successfully")
+                    .setData(uniqueStore), HttpStatus.OK);
         }).orElseThrow();
     }
 
     @Override
     public ResponseEntity<ResponseStructure<StoreResponse>> getStore(String storeId) {
         return storeRepo.findById(storeId)
-                .map(store -> new ResponseEntity<>(basicStructure.setStatus(HttpStatus.FOUND.value())
+                .map(store -> new ResponseEntity<>(new ResponseStructure<StoreResponse>()
+                        .setStatus(HttpStatus.FOUND.value())
                         .setMessage("Store data found")
                         .setData(StoreMapper.mapToStorePageResponse(store)), HttpStatus.FOUND))
                 .orElseThrow(() -> new StoreNotFoundByIdException("Failed to find the store data"));
@@ -84,7 +88,8 @@ public class StoreServiceImpl implements StoreService {
                 .map(user -> sellerRepo.findById(user.getUserId())
                         .map(seller -> {
                             if (seller.getStore() != null) {
-                                return new ResponseEntity<>(new ResponseStructure<StoreResponse>().setStatus(HttpStatus.FOUND.value())
+                                return new ResponseEntity<>(new ResponseStructure<StoreResponse>()
+                                        .setStatus(HttpStatus.FOUND.value())
                                         .setMessage("Store found")
                                         .setData(StoreMapper.mapToStorePageResponse(seller.getStore())), HttpStatus.FOUND);
                             } else throw new RuntimeException("No Store found associated with seller");

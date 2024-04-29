@@ -41,7 +41,7 @@ public class SpecificationServiceImpl implements SpecificationService {
             product.getSpecification().addAll(specifications);
             productRepo.save(product);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(structure.setStatus(HttpStatus.CREATED.value())
+                    .body(new ResponseStructure<List<SpecificationResponse>>().setStatus(HttpStatus.CREATED.value())
                             .setMessage("Specifications Created")
                             .setData(SpecificationMapper.mapToSpecificationResponse(specifications)));
         }).orElseThrow();

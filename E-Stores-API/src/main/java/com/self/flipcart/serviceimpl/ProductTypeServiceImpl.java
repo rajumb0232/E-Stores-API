@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 public class ProductTypeServiceImpl implements ProductTypeService {
 
     private ProductTypeRepo typeRepo;
-    private ResponseStructure<List<ProductType>> listStructure;
 
     @Override
     public ResponseEntity<ResponseStructure<List<ProductType>>> addProductTypes(String topCategory, String subCategory, String[] productTypes) {
@@ -46,7 +45,7 @@ public class ProductTypeServiceImpl implements ProductTypeService {
                 }).collect(Collectors.toList());
 
         types = typeRepo.saveAll(types);
-        return ResponseEntity.ok(listStructure.setStatus(HttpStatus.OK.value())
+        return ResponseEntity.ok(new ResponseStructure<List<ProductType>>().setStatus(HttpStatus.OK.value())
                 .setMessage("Product types added")
                 .setData(types));
     }

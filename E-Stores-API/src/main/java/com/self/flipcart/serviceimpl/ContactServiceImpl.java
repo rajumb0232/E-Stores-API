@@ -20,8 +20,6 @@ public class ContactServiceImpl implements ContactService {
 
     private ContactRepo contactRepo;
     private AddressRepo addressRepo;
-    private ResponseStructure<Contact> structure;
-    private ResponseStructure<List<Contact>> structureList;
 
     @Override
     public ResponseEntity<ResponseStructure<List<Contact>>> addContact(ContactRequest contactRequest, String addressId) {
@@ -29,7 +27,8 @@ public class ContactServiceImpl implements ContactService {
             Contact contact = ContactMapper.mapToContactEntity(contactRequest, new Contact());
             contact.setAddress(address);
             contact = contactRepo.save(contact);
-            return new ResponseEntity<>(structureList.setStatus(HttpStatus.CREATED.value())
+            return new ResponseEntity<>(new ResponseStructure<List<Contact>>()
+                    .setStatus(HttpStatus.CREATED.value())
                     .setMessage("Successfully saved contact")
                     .setData(contactRepo.findAllByAddress(contact.getAddress())), HttpStatus.CREATED);
         }).orElseThrow();
@@ -39,7 +38,8 @@ public class ContactServiceImpl implements ContactService {
     public ResponseEntity<ResponseStructure<List<Contact>>> updateContact(ContactRequest contactRequest, String contactId) {
         return contactRepo.findById(contactId).map(c -> {
             Contact contact = contactRepo.save(ContactMapper.mapToContactEntity(contactRequest, c));
-            return new ResponseEntity<>(structureList.setStatus(HttpStatus.OK.value())
+            return new ResponseEntity<>(new ResponseStructure<List<Contact>>()
+                    .setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully updated contact")
                     .setData(contactRepo.findAllByAddress(contact.getAddress())), HttpStatus.OK);
         }).orElseThrow();
@@ -47,14 +47,16 @@ public class ContactServiceImpl implements ContactService {
 
     @Override
     public ResponseEntity<ResponseStructure<Contact>> getContactById(String contactId) {
-        return contactRepo.findById(contactId).map(contact -> new ResponseEntity<>(structure.setStatus(HttpStatus.FOUND.value())
+        return contactRepo.findById(contactId).map(contact -> new ResponseEntity<>(new ResponseStructure<Contact>()
+                .setStatus(HttpStatus.FOUND.value())
                 .setMessage("contact found")
                 .setData(contact), HttpStatus.FOUND)).orElseThrow();
     }
 
     @Override
     public ResponseEntity<ResponseStructure<List<Contact>>> getContactsByAddress(String addressId) {
-        return addressRepo.findById(addressId).map(address -> new ResponseEntity<>(structureList.setStatus(HttpStatus.FOUND.value())
+        return addressRepo.findById(addressId).map(address -> new ResponseEntity<>(new ResponseStructure<List<Contact>>()
+                .setStatus(HttpStatus.FOUND.value())
                 .setMessage("contacts found b address")
                 .setData(contactRepo.findAllByAddress(address)), HttpStatus.FOUND)).orElseThrow();
 
@@ -71,7 +73,8 @@ public class ContactServiceImpl implements ContactService {
                     contactRepo.save(contacts.get(0));
                 }
             }
-            return ResponseEntity.ok(structureList.setStatus(HttpStatus.OK.value())
+            return ResponseEntity.ok(new ResponseStructure<List<Contact>>()
+                    .setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully deleted the contact")
                     .setData(contacts));
         }).orElseThrow();

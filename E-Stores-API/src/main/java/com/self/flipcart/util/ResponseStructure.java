@@ -1,8 +1,14 @@
 package com.self.flipcart.util;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ResponseStructure<T> extends Structure<T> {
     private int status;
     private String message;

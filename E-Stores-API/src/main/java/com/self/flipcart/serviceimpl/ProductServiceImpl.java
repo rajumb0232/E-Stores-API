@@ -27,7 +27,6 @@ public class ProductServiceImpl implements ProductService {
     private StoreRepo storeRepo;
     private ProductTypeRepo typeRepo;
     private ProductRepo productRepo;
-    private ResponseStructure<ProductResponse> structure;
 
     @Override
     public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest, String storeId) {
@@ -43,7 +42,7 @@ public class ProductServiceImpl implements ProductService {
                                 product.setStoreId(storeId);
                                 product.setSpecification(new ArrayList<>());
                                 product = productRepo.save(product);
-                                return ResponseEntity.ok(structure.setStatus(HttpStatus.OK.value())
+                                return ResponseEntity.ok(new ResponseStructure<ProductResponse>().setStatus(HttpStatus.OK.value())
                                         .setMessage("Product saved successfully")
                                         .setData(ProductMapper.mapToProductPageResponse(product, type, store)));
                             }).orElseThrow(() -> new ProductTypeNotFoundException("Failed to add Product"));
