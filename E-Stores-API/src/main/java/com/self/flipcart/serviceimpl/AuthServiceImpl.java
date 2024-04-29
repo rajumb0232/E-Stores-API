@@ -47,16 +47,16 @@ import java.util.stream.Collectors;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private UserRepo userRepo;
-    private AccessTokenRepo accessTokenRepo;
-    private RefreshTokenRepo refreshTokenRepo;
-    private PasswordEncoder passwordEncoder;
-    private JavaMailSender javaMailSender;
-    private CacheStore<OtpModel> otpCache;
-    private CacheStore<User> userCacheStore;
-    private JwtService jwtService;
-    private AuthenticationManager authenticationManager;
-    private CookieManager cookieManager;
+    private final UserRepo userRepo;
+    private final AccessTokenRepo accessTokenRepo;
+    private final RefreshTokenRepo refreshTokenRepo;
+    private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender javaMailSender;
+    private final CacheStore<OtpModel> otpCache;
+    private final CacheStore<User> userCacheStore;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+    private final CookieManager cookieManager;
 
     public AuthServiceImpl(UserRepo userRepo,
                            AccessTokenRepo accessTokenRepo,

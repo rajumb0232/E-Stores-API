@@ -16,9 +16,8 @@ import java.util.List;
 public class Product {
     @MongoId
     private String productId;
-    private String productTitle;
+    private String title;
     private String description;
-    private double productPrice;
     private int stockQuantity;
     private String topCategory;
     private String subCategory;
@@ -39,4 +38,9 @@ public class Product {
 
     @DBRef(lazy = true)
     private List<Specification> specification;
+
+    private List<String> variantBy;
+
+    @DBRef(lazy = true)
+    private List<Variant> variants;
 }

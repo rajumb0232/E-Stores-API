@@ -16,5 +16,6 @@ public class Variant {
 
     @MongoId
     private String variantId;
+    private double price;
     private List<Specification> specifications;
 }
