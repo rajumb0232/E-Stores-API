@@ -10,7 +10,7 @@ public interface JwtService {
 
     String extractUsername(String token);
 
-    String extractUserRole(String token);
+    String extractUserRoles(String token);
 
     Date extractExpiry(String token);
 

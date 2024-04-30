@@ -1,6 +1,8 @@
 package com.self.flipcart.controller;
 
 import com.self.flipcart.dto.OtpModel;
+import com.self.flipcart.model.Customer;
+import com.self.flipcart.model.Seller;
 import com.self.flipcart.requestdto.AuthRequest;
 import com.self.flipcart.requestdto.UserRequest;
 import com.self.flipcart.responsedto.AuthResponse;
@@ -23,9 +25,14 @@ public class AuthController extends ResponseEntityExceptionHandler {
 
     private AuthService authService;
 
-    @PostMapping("/users/register")
-    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(@RequestBody @Valid UserRequest userRequest) {
-        return authService.registerUser(userRequest);
+    @PostMapping("/sellers/register")
+    public ResponseEntity<ResponseStructure<UserResponse>> registerSeller(@RequestBody @Valid UserRequest userRequest) {
+        return authService.registerUser(userRequest, Seller.class);
+    }
+
+    @PostMapping("/customers/register")
+    public ResponseEntity<ResponseStructure<UserResponse>> registerCustomer(@RequestBody @Valid UserRequest userRequest) {
+        return authService.registerUser(userRequest, Customer.class);
     }
 
     @PostMapping("/verify-email")

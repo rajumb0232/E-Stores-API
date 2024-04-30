@@ -56,7 +56,7 @@ public class SecurityConfig {
     @Order(1)
     SecurityFilterChain loginSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/login/**"))
+                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/login/**", "api/fkv1/sellers/register/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(new LoginFilter(), UsernamePasswordAuthenticationFilter.class)

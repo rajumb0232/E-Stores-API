@@ -10,7 +10,7 @@ import com.self.flipcart.util.SimpleResponseStructure;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
-    ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest);
+    ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, Class<?> userType);
 
     ResponseEntity<ResponseStructure<UserResponse>> verifyUserEmail(OtpModel otpModel);
 

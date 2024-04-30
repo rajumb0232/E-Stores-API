@@ -1,7 +1,8 @@
 package com.self.flipcart.responsedto;
 
-import com.self.flipcart.enums.UserRole;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -13,5 +14,5 @@ public class UserResponse {
     private String username;
     private String email;
     private boolean isEmailVerified;
-    private UserRole userRole;
+    private List<String> roles;
 }

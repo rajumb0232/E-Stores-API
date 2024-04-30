@@ -3,6 +3,7 @@ package com.self.flipcart.serviceimpl;
 import com.self.flipcart.cache.CacheStore;
 import com.self.flipcart.dto.MessageData;
 import com.self.flipcart.dto.OtpModel;
+import com.self.flipcart.enums.UserRole;
 import com.self.flipcart.exceptions.*;
 import com.self.flipcart.model.*;
 import com.self.flipcart.repository.AccessTokenRepo;
@@ -38,7 +39,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -86,11 +89,19 @@ public class AuthServiceImpl implements AuthService {
     private long refreshTokenExpirySeconds;
 
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest) {
+    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, Class<?> userType) {
+
+        String roles = Arrays.stream(UserRole.values()).map(UserRole::name).toList().toString();
+        roles = roles.replace('[', ' ').replace(']', ' ').trim().replace(',', ' ');
+        List<String> roleList = Arrays.asList(roles.split("  "));
+        System.out.println(roleList);
+
         // validating if there is already a user with the given email in the request
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
-        User user = mapToChildEntity(userRequest);
+        User user = mapToChildEntity(userRequest, userType);
+        if(user instanceof Seller) user.setRoles(Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER));
+        if(user instanceof Customer) user.setRoles(List.of(UserRole.CUSTOMER));
         // caching user data
         userCacheStore.add(user.getEmail(), user);
         // Generate the OTP and provide the ID of the OTP as a path variable to the confirmation link.
@@ -153,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
                     .setData(AuthResponse.builder()
                             .userId(user.getUserId())
                             .username(user.getUsername())
-                            .role(user.getUserRole().name())
+                            .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
                             .isAuthenticated(true)
                             .accessExpiration(accessTokenExpirySeconds)
                             .refreshExpiration(refreshTokenExpirySeconds)
@@ -209,7 +220,7 @@ public class AuthServiceImpl implements AuthService {
                 .setData(AuthResponse.builder()
                         .userId(user.getUserId())
                         .username(user.getUsername())
-                        .role(user.getUserRole().name())
+                        .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
                         .isAuthenticated(true)
                         .accessExpiration(evaluatedAccessExpiration)
                         .refreshExpiration(evaluatedRefreshExpiration)
@@ -286,7 +297,7 @@ public class AuthServiceImpl implements AuthService {
     /* ----------------------------------------------------------------------------------------------------------- */
     private void generateAccessToken(User user, HttpHeaders headers) {
         //generating access token
-        String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getUserRole().name());
+        String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
@@ -301,7 +312,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void generateRefreshToken(User user, HttpHeaders headers) {
         //generating access token
-        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getUserRole().name());
+        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
@@ -332,24 +343,29 @@ public class AuthServiceImpl implements AuthService {
         return UserResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
-                .userRole(user.getUserRole())
+                .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
                 .email(user.getEmail())
                 .isEmailVerified(user.isEmailVerified())
                 .build();
     }
 
-    private <T extends User> T mapToChildEntity(UserRequest userRequest) {
+    private <T extends User> T mapToChildEntity(UserRequest userRequest, Class<?> userType) {
         User user = null;
-        switch (userRequest.getUserRole()) {
-            case SELLER -> user = new Seller();
-            case CUSTOMER -> user = new Customer();
-            default -> throw new InvalidUserRoleException("Failed to process the request");
-        }
-        user.setUsername(userRequest.getEmail().split("@")[0]);
-        user.setEmail(userRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        user.setUserRole(userRequest.getUserRole());
+        try{
+             user = (User) userType.getDeclaredConstructor().newInstance();
+//        switch (userRequest.getUserRole()) {
+//            case SELLER -> user = new Seller();
+//            case CUSTOMER -> user = new Customer();
+//            default -> throw new InvalidUserRoleException("Failed to process the request");
+//        }
+            user.setUsername(userRequest.getEmail().split("@")[0]);
+            user.setEmail(userRequest.getEmail());
+            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+//        user.setRoles(userRequest.getUserRole());
 
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException ex){
+            throw new InvalidUserRoleException("Failed to process the request");
+        }
         return (T) user;
     }
 

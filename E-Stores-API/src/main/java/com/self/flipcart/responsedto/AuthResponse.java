@@ -2,6 +2,8 @@ package com.self.flipcart.responsedto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -10,7 +12,7 @@ import lombok.*;
 public class AuthResponse {
     private String userId;
     private String username;
-    private String role;
+    private List<String> roles;
     private boolean isAuthenticated;
     private long accessExpiration;
     private long refreshExpiration;

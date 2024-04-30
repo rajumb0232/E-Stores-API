@@ -19,7 +19,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Slf4j
@@ -44,11 +46,14 @@ public class RefreshFilter extends OncePerRequestFilter {
         try{
             log.info("Extracting credentials...");
             String username = jwtService.extractUsername(rt);
-            String role = jwtService.extractUserRole(rt);
+            String roles = jwtService.extractUserRoles(rt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                roles = roles.replace('[', ' ').replace(']', ' ').trim();
+                List<String> roleList = Arrays.asList(roles.split(", "));
+
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username,
-                        null, Collections.singleton(new SimpleGrantedAuthority(role)));
+                        null, roleList.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
                 token.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
                 log.info("JWT Authentication Successful");
