@@ -24,9 +24,9 @@ import java.util.ArrayList;
 @AllArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private StoreRepo storeRepo;
-    private ProductTypeRepo typeRepo;
-    private ProductRepo productRepo;
+    private final StoreRepo storeRepo;
+    private final ProductTypeRepo typeRepo;
+    private final ProductRepo productRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest, String storeId) {

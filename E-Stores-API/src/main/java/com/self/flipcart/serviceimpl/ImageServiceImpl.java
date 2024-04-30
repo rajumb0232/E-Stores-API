@@ -21,8 +21,8 @@ import java.time.Duration;
 @AllArgsConstructor
 public class ImageServiceImpl implements ImageService {
 
-    private ImageRepo imageRepo;
-    private StoreRepo storeRepo;
+    private final ImageRepo imageRepo;
+    private final StoreRepo storeRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<String>> addStoreImage(String storeId, MultipartFile image) {

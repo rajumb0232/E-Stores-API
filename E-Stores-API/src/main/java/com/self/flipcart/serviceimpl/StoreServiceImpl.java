@@ -21,9 +21,9 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class StoreServiceImpl implements StoreService {
 
-    private UserRepo userRepo;
-    private SellerRepo sellerRepo;
-    private StoreRepo storeRepo;
+    private final UserRepo userRepo;
+    private final SellerRepo sellerRepo;
+    private final StoreRepo storeRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<Store>> setUpStore(StoreRequest storeRequest) {
@@ -42,7 +42,7 @@ public class StoreServiceImpl implements StoreService {
                                     .setStatus(HttpStatus.CREATED.value())
                                     .setMessage("Store Created Successfully")
                                     .setData(uniqueStore));
-                        }).get()).orElseThrow();
+                        }).orElseThrow()).orElseThrow();
     }
 
     @Override
@@ -78,7 +78,7 @@ public class StoreServiceImpl implements StoreService {
                             if (seller.getStore() != null) return ResponseEntity.ok(true);
                             else return ResponseEntity.ok(false);
                         })
-                        .get())
+                        .orElseThrow())
                 .orElseThrow();
     }
 
@@ -93,7 +93,7 @@ public class StoreServiceImpl implements StoreService {
                                         .setMessage("Store found")
                                         .setData(StoreMapper.mapToStorePageResponse(seller.getStore())));
                             } else throw new RuntimeException("No Store found associated with seller");
-                        }).get())
+                        }).orElseThrow())
                 .orElseThrow();
     }
 
