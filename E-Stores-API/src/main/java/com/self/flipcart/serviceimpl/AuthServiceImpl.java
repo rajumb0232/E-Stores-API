@@ -5,7 +5,9 @@ import com.self.flipcart.dto.MessageData;
 import com.self.flipcart.dto.OtpModel;
 import com.self.flipcart.enums.UserRole;
 import com.self.flipcart.exceptions.*;
-import com.self.flipcart.model.*;
+import com.self.flipcart.model.AccessToken;
+import com.self.flipcart.model.RefreshToken;
+import com.self.flipcart.model.User;
 import com.self.flipcart.repository.AccessTokenRepo;
 import com.self.flipcart.repository.RefreshTokenRepo;
 import com.self.flipcart.repository.UserRepo;
@@ -39,7 +41,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
@@ -89,26 +90,22 @@ public class AuthServiceImpl implements AuthService {
     private long refreshTokenExpirySeconds;
 
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, Class<?> userType) {
-
-        String roles = Arrays.stream(UserRole.values()).map(UserRole::name).toList().toString();
-        roles = roles.replace('[', ' ').replace(']', ' ').trim().replace(',', ' ');
-        List<String> roleList = Arrays.asList(roles.split("  "));
-        System.out.println(roleList);
-
+    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
-        User user = mapToChildEntity(userRequest, userType);
-        if(user instanceof Seller) user.setRoles(Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER));
-        if(user instanceof Customer) user.setRoles(List.of(UserRole.CUSTOMER));
+
+        User user = mapToUserEntity(userRequest, role);
+
         // caching user data
         userCacheStore.add(user.getEmail(), user);
+
         // Generate the OTP and provide the ID of the OTP as a path variable to the confirmation link.
         OtpModel otp = OtpModel.builder()
                 .otp(generateOTP())
                 .email(user.getEmail()).build();
         otpCache.add(otp.getEmail(), otp);
+
         try {
             sendOTPToMailId(user, otp.getOtp());
             return ResponseEntity
@@ -133,18 +130,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setEmailVerified(true);
         user = userRepo.save(user);
-        if(user instanceof Seller){
-            System.err.println(true);
-            Customer customer = new Customer();
-            customer.setUserId(user.getUserId());
-            customer.setEmailVerified(true);
-            customer.setEmail(user.getEmail());
-            customer.setRoles(user.getRoles());
-            customer.setUsername(user.getUsername());
-            customer.setPassword(user.getPassword());
-            System.out.println(customer.getUserId());
-            userRepo.save(customer);
-        }
+
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
@@ -363,25 +349,16 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    private <T extends User> T mapToChildEntity(UserRequest userRequest, Class<?> userType) {
-        User user = null;
-        try{
-             user = (User) userType.getDeclaredConstructor().newInstance();
-//        switch (userRequest.getUserRole()) {
-//            case SELLER -> user = new Seller();
-//            case CUSTOMER -> user = new Customer();
-//            default -> throw new InvalidUserRoleException("Failed to process the request");
-//        }
-            user.setUsername(userRequest.getEmail().split("@")[0]);
-            user.setEmail(userRequest.getEmail());
-            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-//        user.setRoles(userRequest.getUserRole());
-
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException ex){
-            throw new InvalidUserRoleException("Failed to process the request");
-        }
-        return (T) user;
-    }
+    private User mapToUserEntity(UserRequest userRequest, UserRole role) {
+        return User.builder()
+                .username(userRequest.getEmail().split("@gmail.com")[0])
+                .email(userRequest.getEmail())
+                .password(passwordEncoder.encode(userRequest.getPassword()))
+                .roles(role.equals(UserRole.SELLER)
+                        ? Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER)
+                        : List.of(UserRole.CUSTOMER))
+                .build();
+}
 
     private Integer generateOTP() {
         return new Random().nextInt(100000, 999999);

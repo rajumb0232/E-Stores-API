@@ -29,4 +29,7 @@ public class Address {
 
     @OneToMany(mappedBy = "address", fetch = FetchType.EAGER)
     private List<Contact> contacts;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 }

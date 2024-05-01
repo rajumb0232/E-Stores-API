@@ -1,8 +1,7 @@
 package com.self.flipcart.controller;
 
 import com.self.flipcart.dto.OtpModel;
-import com.self.flipcart.model.Customer;
-import com.self.flipcart.model.Seller;
+import com.self.flipcart.enums.UserRole;
 import com.self.flipcart.requestdto.AuthRequest;
 import com.self.flipcart.requestdto.UserRequest;
 import com.self.flipcart.responsedto.AuthResponse;
@@ -27,12 +26,12 @@ public class AuthController extends ResponseEntityExceptionHandler {
 
     @PostMapping("/sellers/register")
     public ResponseEntity<ResponseStructure<UserResponse>> registerSeller(@RequestBody @Valid UserRequest userRequest) {
-        return authService.registerUser(userRequest, Seller.class);
+        return authService.registerUser(userRequest, UserRole.SELLER);
     }
 
     @PostMapping("/customers/register")
     public ResponseEntity<ResponseStructure<UserResponse>> registerCustomer(@RequestBody @Valid UserRequest userRequest) {
-        return authService.registerUser(userRequest, Customer.class);
+        return authService.registerUser(userRequest, UserRole.CUSTOMER);
     }
 
     @PostMapping("/verify-email")
@@ -59,7 +58,6 @@ public class AuthController extends ResponseEntityExceptionHandler {
     @PreAuthorize("hasAuthority('ADMIN') OR hasAuthority('SUPER_ADMIN') OR hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
     public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(@CookieValue(name = "rt", required = false) String refreshToken,
                                                                         @CookieValue(name = "at", required = false) String accessToken) {
-        System.err.println("In Refresh Login Handler Method.");
         return authService.refreshLogin(refreshToken, accessToken);
     }
 

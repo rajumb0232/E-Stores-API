@@ -2,7 +2,7 @@ package com.self.flipcart.exceptionhandlers;
 
 import com.self.flipcart.exceptions.InvalidDisplayTypeException;
 import com.self.flipcart.exceptions.InvalidPrimeCategoryException;
-import com.self.flipcart.exceptions.StoreNotFoundByIdException;
+import com.self.flipcart.exceptions.StoreNotFoundException;
 import com.self.flipcart.util.ErrorStructure;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,9 +21,9 @@ public class StoreExceptionHandlers {
         return errorResponse.structure(HttpStatus.BAD_REQUEST, ex.getMessage(), "Invalid display type specified, should be any of basic, card or complete");
     }
 
-    @ExceptionHandler(StoreNotFoundByIdException.class)
-    public ResponseEntity<ErrorStructure<String>> handleStoreNotFoundById(StoreNotFoundByIdException ex){
-        return errorResponse.structure(HttpStatus.BAD_REQUEST, ex.getMessage(), "No store present with the given ID");
+    @ExceptionHandler(StoreNotFoundException.class)
+    public ResponseEntity<ErrorStructure<String>> handleStoreNotFoundById(StoreNotFoundException ex){
+        return errorResponse.structure(HttpStatus.BAD_REQUEST, ex.getMessage(), "No store found");
     }
 
     @ExceptionHandler(InvalidPrimeCategoryException.class)
