@@ -126,11 +126,25 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<ResponseStructure<UserResponse>> verifyUserEmail(OtpModel otpModel) {
         OtpModel otp = otpCache.get(otpModel.getEmail());
         User user = userCacheStore.get(otpModel.getEmail());
+
         if (otp == null) throw new OtpExpiredException("Failed to verify OTP");
         if (user == null) throw new RegistrationSessionExpiredException("Failed to verify OTP");
         if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException("Failed to verify OTP");
+
         user.setEmailVerified(true);
-        userRepo.save(user);
+        user = userRepo.save(user);
+        if(user instanceof Seller){
+            System.err.println(true);
+            Customer customer = new Customer();
+            customer.setUserId(user.getUserId());
+            customer.setEmailVerified(true);
+            customer.setEmail(user.getEmail());
+            customer.setRoles(user.getRoles());
+            customer.setUsername(user.getUsername());
+            customer.setPassword(user.getPassword());
+            System.out.println(customer.getUserId());
+            userRepo.save(customer);
+        }
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
