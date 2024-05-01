@@ -19,9 +19,8 @@ import java.util.ArrayList;
 @AllArgsConstructor
 public class AddressServiceImpl implements AddressService {
 
-    private AddressRepo addressRepo;
-    private StoreRepo storeRepo;
-    private ResponseStructure<AddressResponse> structure;
+    private final AddressRepo addressRepo;
+    private final StoreRepo storeRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<AddressResponse>> addAddressToStore(AddressRequest addressRequest, String storeId) {

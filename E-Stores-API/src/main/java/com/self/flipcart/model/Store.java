@@ -24,5 +24,8 @@ public class Store {
     private String about;
 
     @OneToOne
+    private User user;
+
+    @OneToOne
     private Address address;
 }

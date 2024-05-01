@@ -18,8 +18,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ContactServiceImpl implements ContactService {
 
-    private ContactRepo contactRepo;
-    private AddressRepo addressRepo;
+    private final ContactRepo contactRepo;
+    private final AddressRepo addressRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<List<Contact>>> addContact(ContactRequest contactRequest, String addressId) {

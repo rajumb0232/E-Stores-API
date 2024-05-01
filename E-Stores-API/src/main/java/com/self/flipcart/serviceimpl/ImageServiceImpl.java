@@ -2,7 +2,6 @@ package com.self.flipcart.serviceimpl;
 
 import com.self.flipcart.enums.ImageType;
 import com.self.flipcart.model.Image;
-import com.self.flipcart.model.StoreImage;
 import com.self.flipcart.repository.ImageRepo;
 import com.self.flipcart.repository.StoreRepo;
 import com.self.flipcart.service.ImageService;
@@ -22,8 +21,8 @@ import java.time.Duration;
 @AllArgsConstructor
 public class ImageServiceImpl implements ImageService {
 
-    private ImageRepo imageRepo;
-    private StoreRepo storeRepo;
+    private final ImageRepo imageRepo;
+    private final StoreRepo storeRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<String>> addStoreImage(String storeId, MultipartFile image) {
@@ -33,8 +32,7 @@ public class ImageServiceImpl implements ImageService {
                 String[] a = store.getLogoLink().split("/");
                 imageRepo.deleteById(a[a.length - 1]);
             }
-            StoreImage storeImage = new StoreImage();
-            storeImage.setStoreId(storeId);
+            Image storeImage = new Image();
             storeImage.setContentType(image.getContentType());
             storeImage.setImageType(ImageType.LOGO);
             try {

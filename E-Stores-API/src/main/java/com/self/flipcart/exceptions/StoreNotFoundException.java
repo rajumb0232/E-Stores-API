@@ -5,6 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class StoreNotFoundByIdException extends RuntimeException {
+public class StoreNotFoundException extends RuntimeException {
     private String message;
 }

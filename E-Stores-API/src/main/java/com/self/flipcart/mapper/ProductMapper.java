@@ -13,9 +13,8 @@ public class ProductMapper {
     public static ProductResponse mapToProductPageResponse(Product product, ProductType productType, Store store) {
         return ProductPageResponse.builder()
                 .productId(product.getProductId())
-                .productTitle(product.getProductTitle())
+                .productTitle(product.getTitle())
                 .productQuantity(product.getStockQuantity())
-                .productPrice(product.getProductPrice())
                 .description(product.getDescription())
                 .availabilityStatus(product.getAvailabilityStatus())
                 .avgRating(product.getAvgRating())
@@ -32,10 +31,9 @@ public class ProductMapper {
     }
 
     public static Product mapToProductRequest(ProductRequest productRequest, Product product) {
-        product.setProductTitle(productRequest.getProductTitle());
+        product.setTitle(productRequest.getProductTitle());
         product.setDescription(productRequest.getDescription());
         product.setStockQuantity(productRequest.getStockQuantity());
-        product.setProductPrice(productRequest.getProductPrice());
         product.setSubCategory(productRequest.getSubCategory().name());
         product.setTopCategory(productRequest.getTopCategory().name());
         return product;

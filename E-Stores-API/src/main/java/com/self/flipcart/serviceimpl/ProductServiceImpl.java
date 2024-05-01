@@ -3,7 +3,7 @@ package com.self.flipcart.serviceimpl;
 import com.self.flipcart.enums.AvailabilityStatus;
 import com.self.flipcart.exceptions.InvalidSubCategoryException;
 import com.self.flipcart.exceptions.ProductTypeNotFoundException;
-import com.self.flipcart.exceptions.StoreNotFoundByIdException;
+import com.self.flipcart.exceptions.StoreNotFoundException;
 import com.self.flipcart.mapper.ProductMapper;
 import com.self.flipcart.model.Product;
 import com.self.flipcart.repository.ProductRepo;
@@ -24,9 +24,9 @@ import java.util.ArrayList;
 @AllArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private StoreRepo storeRepo;
-    private ProductTypeRepo typeRepo;
-    private ProductRepo productRepo;
+    private final StoreRepo storeRepo;
+    private final ProductTypeRepo typeRepo;
+    private final ProductRepo productRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest, String storeId) {
@@ -47,7 +47,7 @@ public class ProductServiceImpl implements ProductService {
                                         .setData(ProductMapper.mapToProductPageResponse(product, type, store)));
                             }).orElseThrow(() -> new ProductTypeNotFoundException("Failed to add Product"));
                 }
-        ).orElseThrow(() -> new StoreNotFoundByIdException("Failed to add Product"));
+        ).orElseThrow(() -> new StoreNotFoundException("Failed to add Product"));
     }
 
     private String validateAndGetProductAvailabilityStatus(int quantity) {

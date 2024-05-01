@@ -28,14 +28,14 @@ public class JwtServiceImpl implements JwtService {
     @Value("${token.expiry.refresh.seconds}")
     private long refreshTokenExpirySeconds;
 
-    public String generateAccessToken(String username, String role) {
+    public String generateAccessToken(String username, String roles) {
         log.info("Generating Access Token...");
-        return createJwtToken(Maps.of("role", role).build(), username, accessTokenExpirySeconds * 1000l);
+        return createJwtToken(Maps.of("roles", roles).build(), username, accessTokenExpirySeconds * 1000L);
     }
 
     public String generateRefreshToken(String username, String role) {
         log.info("Generating Refresh Token...");
-        return createJwtToken(Maps.of("role", role).build(), username, refreshTokenExpirySeconds * 1000l);
+        return createJwtToken(Maps.of("roles", role).build(), username, refreshTokenExpirySeconds * 1000L);
     }
 
     private String createJwtToken(Map<String, String> claims, String username, long expiryDuration) {
@@ -59,8 +59,8 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String extractUserRole(String token) {
-        return parseClaims(token).get("role", String.class);
+    public String extractUserRoles(String token) {
+        return parseClaims(token).get("roles", String.class);
     }
 
     @Override

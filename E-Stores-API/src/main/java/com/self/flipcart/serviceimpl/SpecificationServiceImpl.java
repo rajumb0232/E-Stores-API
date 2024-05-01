@@ -20,9 +20,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class SpecificationServiceImpl implements SpecificationService {
 
-    private SpecificationRepo specificationRepo;
-    private ProductRepo productRepo;
-    private ResponseStructure<List<SpecificationResponse>> structure;
+    private final SpecificationRepo specificationRepo;
+    private final ProductRepo productRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<List<SpecificationResponse>>> saveSpecification(List<SpecificationRequest> specRequest, String productId) {

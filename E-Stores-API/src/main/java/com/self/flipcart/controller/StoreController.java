@@ -1,6 +1,5 @@
 package com.self.flipcart.controller;
 
-import com.self.flipcart.model.Store;
 import com.self.flipcart.requestdto.StoreRequest;
 import com.self.flipcart.responsedto.StoreResponse;
 import com.self.flipcart.service.StoreService;
@@ -20,13 +19,13 @@ public class StoreController {
 
     @PostMapping("/stores")
     @PreAuthorize("hasAuthority('SELLER')")
-    public ResponseEntity<ResponseStructure<Store>> setUpStore(@RequestBody StoreRequest storeRequest){
+    public ResponseEntity<ResponseStructure<StoreResponse>> setUpStore(@RequestBody StoreRequest storeRequest){
         return storeService.setUpStore(storeRequest);
     }
 
     @PutMapping("/stores/{storeId}")
     @PreAuthorize("hasAuthority('SELLER')")
-    public ResponseEntity<ResponseStructure<Store>> updateStore(@RequestBody StoreRequest storeRequest, @PathVariable String storeId){
+    public ResponseEntity<ResponseStructure<StoreResponse>> updateStore(@RequestBody StoreRequest storeRequest, @PathVariable String storeId){
         return storeService.updateStore(storeRequest, storeId);
     }
 

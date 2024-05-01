@@ -3,8 +3,11 @@ package com.self.flipcart.serviceimpl;
 import com.self.flipcart.cache.CacheStore;
 import com.self.flipcart.dto.MessageData;
 import com.self.flipcart.dto.OtpModel;
+import com.self.flipcart.enums.UserRole;
 import com.self.flipcart.exceptions.*;
-import com.self.flipcart.model.*;
+import com.self.flipcart.model.AccessToken;
+import com.self.flipcart.model.RefreshToken;
+import com.self.flipcart.model.User;
 import com.self.flipcart.repository.AccessTokenRepo;
 import com.self.flipcart.repository.RefreshTokenRepo;
 import com.self.flipcart.repository.UserRepo;
@@ -39,6 +42,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -47,16 +51,16 @@ import java.util.stream.Collectors;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private UserRepo userRepo;
-    private AccessTokenRepo accessTokenRepo;
-    private RefreshTokenRepo refreshTokenRepo;
-    private PasswordEncoder passwordEncoder;
-    private JavaMailSender javaMailSender;
-    private CacheStore<OtpModel> otpCache;
-    private CacheStore<User> userCacheStore;
-    private JwtService jwtService;
-    private AuthenticationManager authenticationManager;
-    private CookieManager cookieManager;
+    private final UserRepo userRepo;
+    private final AccessTokenRepo accessTokenRepo;
+    private final RefreshTokenRepo refreshTokenRepo;
+    private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender javaMailSender;
+    private final CacheStore<OtpModel> otpCache;
+    private final CacheStore<User> userCacheStore;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+    private final CookieManager cookieManager;
 
     public AuthServiceImpl(UserRepo userRepo,
                            AccessTokenRepo accessTokenRepo,
@@ -86,18 +90,22 @@ public class AuthServiceImpl implements AuthService {
     private long refreshTokenExpirySeconds;
 
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest) {
+    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
-        User user = mapToChildEntity(userRequest);
+
+        User user = mapToUserEntity(userRequest, role);
+
         // caching user data
         userCacheStore.add(user.getEmail(), user);
+
         // Generate the OTP and provide the ID of the OTP as a path variable to the confirmation link.
         OtpModel otp = OtpModel.builder()
                 .otp(generateOTP())
                 .email(user.getEmail()).build();
         otpCache.add(otp.getEmail(), otp);
+
         try {
             sendOTPToMailId(user, otp.getOtp());
             return ResponseEntity
@@ -115,11 +123,14 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<ResponseStructure<UserResponse>> verifyUserEmail(OtpModel otpModel) {
         OtpModel otp = otpCache.get(otpModel.getEmail());
         User user = userCacheStore.get(otpModel.getEmail());
+
         if (otp == null) throw new OtpExpiredException("Failed to verify OTP");
         if (user == null) throw new RegistrationSessionExpiredException("Failed to verify OTP");
         if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException("Failed to verify OTP");
+
         user.setEmailVerified(true);
-        userRepo.save(user);
+        user = userRepo.save(user);
+
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
@@ -153,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
                     .setData(AuthResponse.builder()
                             .userId(user.getUserId())
                             .username(user.getUsername())
-                            .role(user.getUserRole().name())
+                            .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
                             .isAuthenticated(true)
                             .accessExpiration(accessTokenExpirySeconds)
                             .refreshExpiration(refreshTokenExpirySeconds)
@@ -209,7 +220,7 @@ public class AuthServiceImpl implements AuthService {
                 .setData(AuthResponse.builder()
                         .userId(user.getUserId())
                         .username(user.getUsername())
-                        .role(user.getUserRole().name())
+                        .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
                         .isAuthenticated(true)
                         .accessExpiration(evaluatedAccessExpiration)
                         .refreshExpiration(evaluatedRefreshExpiration)
@@ -286,7 +297,7 @@ public class AuthServiceImpl implements AuthService {
     /* ----------------------------------------------------------------------------------------------------------- */
     private void generateAccessToken(User user, HttpHeaders headers) {
         //generating access token
-        String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getUserRole().name());
+        String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
@@ -301,7 +312,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void generateRefreshToken(User user, HttpHeaders headers) {
         //generating access token
-        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getUserRole().name());
+        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
@@ -332,26 +343,22 @@ public class AuthServiceImpl implements AuthService {
         return UserResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
-                .userRole(user.getUserRole())
+                .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
                 .email(user.getEmail())
                 .isEmailVerified(user.isEmailVerified())
                 .build();
     }
 
-    private <T extends User> T mapToChildEntity(UserRequest userRequest) {
-        User user = null;
-        switch (userRequest.getUserRole()) {
-            case SELLER -> user = new Seller();
-            case CUSTOMER -> user = new Customer();
-            default -> throw new InvalidUserRoleException("Failed to process the request");
-        }
-        user.setUsername(userRequest.getEmail().split("@")[0]);
-        user.setEmail(userRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        user.setUserRole(userRequest.getUserRole());
-
-        return (T) user;
-    }
+    private User mapToUserEntity(UserRequest userRequest, UserRole role) {
+        return User.builder()
+                .username(userRequest.getEmail().split("@gmail.com")[0])
+                .email(userRequest.getEmail())
+                .password(passwordEncoder.encode(userRequest.getPassword()))
+                .roles(role.equals(UserRole.SELLER)
+                        ? Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER)
+                        : List.of(UserRole.CUSTOMER))
+                .build();
+}
 
     private Integer generateOTP() {
         return new Random().nextInt(100000, 999999);

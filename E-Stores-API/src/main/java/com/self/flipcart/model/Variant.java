@@ -1,6 +1,7 @@
 package com.self.flipcart.model;
 
 import lombok.*;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -16,5 +17,8 @@ public class Variant {
 
     @MongoId
     private String variantId;
+    private double price;
+
+    @DBRef
     private List<Specification> specifications;
 }

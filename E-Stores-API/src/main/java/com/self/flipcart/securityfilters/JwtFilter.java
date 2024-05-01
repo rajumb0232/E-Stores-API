@@ -19,7 +19,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
@@ -40,19 +42,21 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             String username = null;
-            String role = null;
+            String roles = null;
 
             if (accessToken != null) {
                 log.info("Extracting credentials...");
                 if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
                     throw new UserNotLoggedInException("Failed to authenticate the user");
                 username = jwtService.extractUsername(accessToken);
-                role = jwtService.extractUserRole(accessToken);
+                roles = jwtService.extractUserRoles(accessToken);
             }
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                roles = roles.replace('[', ' ').replace(']', ' ').trim();
+                List<String> roleList = Arrays.asList(roles.split(", "));
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username,
-                        null, Collections.singleton(new SimpleGrantedAuthority(role)));
+                        null, roleList.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
                 token.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
                 log.info("JWT Authentication Successful");

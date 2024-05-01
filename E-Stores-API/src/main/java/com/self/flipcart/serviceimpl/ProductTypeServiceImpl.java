@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public class ProductTypeServiceImpl implements ProductTypeService {
 
-    private ProductTypeRepo typeRepo;
+    private final ProductTypeRepo typeRepo;
 
     @Override
     public ResponseEntity<ResponseStructure<List<ProductType>>> addProductTypes(String topCategory, String subCategory, String[] productTypes) {
