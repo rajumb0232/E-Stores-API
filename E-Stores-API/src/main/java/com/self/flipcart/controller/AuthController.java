@@ -19,7 +19,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @AllArgsConstructor
 @RestController
 @RequestMapping("/api/fkv1")
-@CrossOrigin(allowCredentials = "true", origins = "http://localhost:5173/")
 public class AuthController extends ResponseEntityExceptionHandler {
 
     private AuthService authService;
