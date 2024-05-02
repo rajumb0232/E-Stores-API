@@ -3,6 +3,7 @@ package com.self.flipcart.model;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Getter
@@ -12,8 +13,8 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @NoArgsConstructor
 @Document(collection = "specifications")
 public class Specification {
-    @MongoId
-    private String specificationId;
+    @MongoId(FieldType.STRING)
+    private String specId;
     private String name;
     private String value;
 

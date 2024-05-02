@@ -26,21 +26,33 @@ public class SpecificationServiceImpl implements SpecificationService {
     @Override
     public ResponseEntity<ResponseStructure<List<SpecificationResponse>>> saveSpecification(List<SpecificationRequest> specRequest, String productId) {
         return productRepo.findById(productId).map(product -> {
-            List<Specification> specifications = specRequest.stream()
-                    .map(spec -> Specification.builder()
-                            .name(spec.getName())
-                            .value(spec.getValue())
-                            .product(product)
-                            .build())
-                    // setting up the existing ID, if the spec is already associated with the product
-                    .peek(spec -> specificationRepo.findByNameAndProduct(spec.getName(), product)
-                            .ifPresent(exSpec -> spec.setSpecificationId(exSpec.getSpecificationId())))
-                    .collect(Collectors.toList());
-            specifications = specificationRepo.saveAll(specifications);
-            product.getSpecification().addAll(specifications);
+            /* Iterating over each spec request given
+             * creates new if it is not present by name, or updates the existing
+             * */
+            List<Specification> specifications = specRequest.stream().map(specReq -> {
+                Specification specification = specificationRepo.findByNameAndProduct(specReq.getName().toLowerCase(), product)
+                        .map(exSpec -> {
+                            exSpec.setName(specReq.getName());
+                            exSpec.setValue(specReq.getValue());
+                            return specificationRepo.save(exSpec);
+                        }).orElseGet(() -> {
+                            Specification spec = new Specification();
+                            spec.setProduct(product);
+                            spec.setName(specReq.getName());
+                            spec.setValue(specReq.getValue());
+                            spec = specificationRepo.save(spec);
+                            /* adding specification to the product */
+                            product.getSpecification().add(spec);
+                            return spec;
+                        });
+                return specificationRepo.save(specification);
+            }).collect(Collectors.toList());
+
             productRepo.save(product);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseStructure<List<SpecificationResponse>>().setStatus(HttpStatus.CREATED.value())
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new ResponseStructure<List<SpecificationResponse>>()
+                            .setStatus(HttpStatus.CREATED.value())
                             .setMessage("Specifications Created")
                             .setData(SpecificationMapper.mapToSpecificationResponse(specifications)));
         }).orElseThrow();

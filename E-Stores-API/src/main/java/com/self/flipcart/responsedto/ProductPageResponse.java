@@ -15,7 +15,7 @@ public class ProductPageResponse implements ProductResponse {
     private String productTitle;
     private String description;
     private double productPrice;
-    private int productQuantity;
+    private int stockQuantity;
     private String availabilityStatus;
     private int totalOrders;
     private int totalReviews;

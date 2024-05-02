@@ -25,10 +25,6 @@ public class Product {
     @DBRef
     private ProductType productType;
 
-    private String availabilityStatus;
-    private int totalOrders;
-    private int totalReviews;
-    private float avgRating;
     // Refers to the ProductType
     private String productTypeId;
     // Refers to the Store

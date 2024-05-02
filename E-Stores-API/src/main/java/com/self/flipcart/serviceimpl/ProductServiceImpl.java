@@ -1,6 +1,5 @@
 package com.self.flipcart.serviceimpl;
 
-import com.self.flipcart.enums.AvailabilityStatus;
 import com.self.flipcart.exceptions.InvalidSubCategoryException;
 import com.self.flipcart.exceptions.ProductTypeNotFoundException;
 import com.self.flipcart.exceptions.StoreNotFoundException;
@@ -34,10 +33,9 @@ public class ProductServiceImpl implements ProductService {
                 {
                     if (!productRequest.getTopCategory().getSubCategories().contains(productRequest.getSubCategory()))
                         throw new InvalidSubCategoryException("failed to add product");
-                    return typeRepo.findByTypeNameAndSubCategoryAndTopCategory(productRequest.getProductType(), productRequest.getSubCategory(), productRequest.getTopCategory())
+                    return typeRepo.findByTypeNameAndSubCategoryAndTopCategory(productRequest.getProductType().toLowerCase(), productRequest.getSubCategory(), productRequest.getTopCategory())
                             .map(type -> {
-                                Product product = ProductMapper.mapToProductRequest(productRequest, new Product());
-                                product.setAvailabilityStatus(validateAndGetProductAvailabilityStatus(productRequest.getStockQuantity()));
+                                Product product = ProductMapper.mapToProductEntity(productRequest, new Product());
                                 product.setProductTypeId(type.getTypeId());
                                 product.setStoreId(storeId);
                                 product.setSpecification(new ArrayList<>());
@@ -49,13 +47,4 @@ public class ProductServiceImpl implements ProductService {
                 }
         ).orElseThrow(() -> new StoreNotFoundException("Failed to add Product"));
     }
-
-    private String validateAndGetProductAvailabilityStatus(int quantity) {
-        return quantity < 1
-                ? AvailabilityStatus.OUT_OF_STOCK.name()
-                : (quantity > 1 && quantity < 10)
-                ? AvailabilityStatus.ONLY_FEW_LEFT.name()
-                : AvailabilityStatus.AVAILABLE.name();
-    }
-
 }

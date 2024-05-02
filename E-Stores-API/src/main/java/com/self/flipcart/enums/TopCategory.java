@@ -48,8 +48,8 @@ public enum TopCategory {
     SPORTS("Sports", new ArrayList<>());
 
 
-    private String name;
-    private List<SubCategory> subCategories;
+    private final String name;
+    private final List<SubCategory> subCategories;
 
     TopCategory(String name, List<SubCategory> subCategories) {
         this.name = name;
