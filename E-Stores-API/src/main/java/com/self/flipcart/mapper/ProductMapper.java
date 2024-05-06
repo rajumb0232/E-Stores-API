@@ -37,6 +37,7 @@ public class ProductMapper {
         response.setVariable(varyingProduct.isVariable());
         response.setVariantBy(varyingProduct.getVariantBy());
         response.setVariants(VariantMapper.mapToVariantResponseList(varyingProduct.getVariants()));
+        response.setAvailabilityStatus(AvailabilityStatus.VARYING.name());
         return response;
     }
 
@@ -52,6 +53,12 @@ public class ProductMapper {
                 .build());
         response.setSpecifications(product.getSpecifications());
         response.setStore(StoreMapper.mapToStoreCardResponse(store));
+
+        if(product instanceof SimpleProduct simpleProduct){
+            response.setPrice(simpleProduct.getPrice());
+            response.setStockQuantity(simpleProduct.getStockQuantity());
+            response.setAvailabilityStatus(validateAndGetProductAvailabilityStatus(simpleProduct.getStockQuantity()));
+        }
         return  response;
     }
 
