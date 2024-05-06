@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 @AllArgsConstructor
 public class OptionsController {
 

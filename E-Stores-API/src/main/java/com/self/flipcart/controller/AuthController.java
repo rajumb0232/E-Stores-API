@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 public class AuthController extends ResponseEntityExceptionHandler {
 
     private AuthService authService;

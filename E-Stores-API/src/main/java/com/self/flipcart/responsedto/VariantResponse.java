@@ -1,10 +1,8 @@
-package com.self.flipcart.model;
+package com.self.flipcart.responsedto;
 
 import com.self.flipcart.enums.MetricType;
+import com.self.flipcart.model.UnitsByMetric;
 import lombok.*;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.util.Map;
 import java.util.Set;
@@ -14,17 +12,11 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "variants")
-public class Variant {
-
-    @MongoId
+public class VariantResponse {
     private String variantId;
     private double price;
 
     private Map<String, String> specifications;
     private MetricType metricType;
     private Set<UnitsByMetric> unitsAvailableByMetric;
-
-    @DBRef(lazy = true)
-    private Product product;
 }

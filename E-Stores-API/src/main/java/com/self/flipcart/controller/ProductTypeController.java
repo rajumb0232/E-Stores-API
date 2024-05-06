@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 @AllArgsConstructor
 public class ProductTypeController {
 

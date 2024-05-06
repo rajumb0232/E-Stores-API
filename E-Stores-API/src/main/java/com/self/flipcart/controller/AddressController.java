@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 public class AddressController {
 
     private AddressService addressService;
