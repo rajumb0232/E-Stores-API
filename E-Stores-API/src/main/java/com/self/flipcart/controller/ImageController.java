@@ -8,9 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 @AllArgsConstructor
-@CrossOrigin(allowCredentials = "true", origins = "http://localhost:5173/")
 public class ImageController {
 
     private ImageService imageService;

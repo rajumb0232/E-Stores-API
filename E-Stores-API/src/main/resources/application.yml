@@ -36,6 +36,9 @@ spring:
 server:
   port: 7000
 
+app:
+  base_url: /api/fkv1
+
 # JWT secret
 myapp:
   jwt:

@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/api/fkv1")
-@CrossOrigin(allowCredentials = "true", origins = "http://localhost:5173/")
+@RequestMapping("${app.base_url}")
 public class AddressController {
 
     private AddressService addressService;

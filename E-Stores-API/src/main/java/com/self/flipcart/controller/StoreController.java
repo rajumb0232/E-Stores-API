@@ -10,9 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 @AllArgsConstructor
-@CrossOrigin(allowCredentials = "true", origins = "http://localhost:5173/")
 public class StoreController {
 
     private StoreService storeService;

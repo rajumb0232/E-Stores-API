@@ -1,16 +1,17 @@
 package com.self.flipcart.model;
 
-import lombok.*;
-import org.springframework.data.mongodb.core.mapping.DBRef;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
+//@Builder
+//@AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "products")
 public class Product {
@@ -18,13 +19,9 @@ public class Product {
     private String productId;
     private String title;
     private String description;
-    private int stockQuantity;
+    private boolean variable;
     private String topCategory;
     private String subCategory;
-
-    @DBRef
-    private ProductType productType;
-
     // Refers to the ProductType
     private String productTypeId;
     // Refers to the Store
@@ -32,11 +29,5 @@ public class Product {
     // Refers to the Reviews
     // Refers to the Questions
 
-    @DBRef(lazy = true)
-    private List<Specification> specification;
-
-    private List<String> variantBy;
-
-    @DBRef(lazy = true)
-    private List<Variant> variants;
+    private Map<String, String> specifications;
 }

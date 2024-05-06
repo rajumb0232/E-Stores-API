@@ -11,9 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/fkv1")
+@RequestMapping("${app.base_url}")
 @AllArgsConstructor
-@CrossOrigin(allowCredentials = "true", origins = "http://localhost:5173/")
 public class ContactController {
 
     private ContactService contactService;
