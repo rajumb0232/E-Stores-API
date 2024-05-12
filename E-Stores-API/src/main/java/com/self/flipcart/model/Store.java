@@ -23,9 +23,9 @@ public class Store {
     private String logoLink;
     private String about;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     private User user;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     private Address address;
 }

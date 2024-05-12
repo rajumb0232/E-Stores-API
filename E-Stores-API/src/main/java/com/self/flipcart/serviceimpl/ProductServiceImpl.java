@@ -5,6 +5,8 @@ import com.self.flipcart.exceptions.ProductTypeNotFoundException;
 import com.self.flipcart.exceptions.StoreNotFoundException;
 import com.self.flipcart.mapper.ProductMapper;
 import com.self.flipcart.model.Product;
+import com.self.flipcart.model.ProductType;
+import com.self.flipcart.model.Store;
 import com.self.flipcart.repository.ProductRepo;
 import com.self.flipcart.repository.ProductTypeRepo;
 import com.self.flipcart.repository.StoreRepo;
@@ -62,7 +64,8 @@ public class ProductServiceImpl implements ProductService {
                                 product = productRepo.save(product);
                                 specSuggestService.updateSpecSuggest(product.getSpecifications(), product.getProductTypeId());
 
-                                return ResponseEntity.ok(new ResponseStructure<ProductResponse>().setStatus(HttpStatus.OK.value())
+                                return ResponseEntity.ok(new ResponseStructure<ProductResponse>()
+                                        .setStatus(HttpStatus.OK.value())
                                         .setMessage("Product saved successfully")
                                         .setData(ProductMapper.mapToProductPageResponse(product, type, store)));
                             }).orElseThrow(() -> new ProductTypeNotFoundException("Failed to add Product"));
@@ -99,5 +102,45 @@ public class ProductServiceImpl implements ProductService {
 
         invalidSpecs.forEach((k, v) -> product.getSpecifications().remove(k));
         return true;
+    }
+
+    @Override
+    public ResponseEntity<ResponseStructure<ProductResponse>> getProductById(String productId) {
+        return productRepo.findById(productId).map(product -> {
+            ProductType type = typeRepo.findById(product.getProductTypeId()).orElseThrow();
+            Store store = storeRepo.findById(product.getStoreId()).orElseThrow();
+
+            return ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<ProductResponse>()
+                    .setStatus(HttpStatus.FOUND.value())
+                    .setMessage("Product saved successfully")
+                    .setData(ProductMapper.mapToProductPageResponse(product, type, store)));
+        }).orElseThrow();
+    }
+
+    @Override
+    public ResponseEntity<ResponseStructure<List<ProductResponse>>> getProducts(String text) {
+        text = String.join(" ", ExtractKeyWords(text));
+        if(text.endsWith("s")) {
+            text = text.substring(0, text.length() - 1);
+        }
+        System.out.println(text);
+        List<ProductResponse> products = productRepo.findByTitleIgnoreCaseLikeOrDescriptionIgnoreCaseLike(text, text).stream().map(product -> {
+            ProductType type = typeRepo.findById(product.getProductTypeId()).orElseThrow();
+            Store store = storeRepo.findById(product.getStoreId()).orElseThrow();
+            return ProductMapper.mapToProductPageResponse(product, type, store);
+        }).toList();
+
+        return ResponseEntity.ok(new ResponseStructure<List<ProductResponse>>()
+                .setStatus(HttpStatus.OK.value())
+                .setMessage("Products Found")
+                .setData(products));
+    }
+
+    private List<String> ExtractKeyWords(String text) {
+//        Set<String> stopWords = new HashSet<>(Arrays.asList("the", "or", "is", "not", "but", "and"));
+
+        return Arrays.stream(text.split("\\W+"))
+//                .filter(word -> !stopWords.contains(word))
+                .toList();
     }
 }
