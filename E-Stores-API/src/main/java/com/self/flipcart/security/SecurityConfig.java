@@ -9,9 +9,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,30 +29,43 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private CustomUserDetailsService userDetailService;
-//    private JwtFilter jwtFilter;
+    //    private JwtFilter jwtFilter;
 //    private LoginFilter loginFilter;
     private JwtService jwtService;
     private AccessTokenRepo accessTokenRepo;
     private RefreshTokenRepo refreshTokenRepo;
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
     @Bean
-    @Order(4)
-    SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    @Order(1)
+    SecurityFilterChain publicFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new JwtFilter(jwtService, accessTokenRepo), UsernamePasswordAuthenticationFilter.class)
-                .authenticationProvider(authenticationProvider())
+                .securityMatchers(matcher -> matcher.requestMatchers(HttpMethod.GET,
+                        "/api/fkv1/top-categories/**",
+                        "/api/fkv1/categories/**",
+                        "/api/fkv1/states/**",
+                        "/api/fkv1/products/**"))
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
 
     @Bean
     @Order(2)
+    SecurityFilterChain registrationFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity.csrf(AbstractHttpConfigurer::disable)
+                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/sellers/register/**", "/api/fkv1/customers/register/**", "/api/fkv1/verify-email/**"))
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .build();
+    }
+
+    @Bean
+    @Order(3)
     SecurityFilterChain loginSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/login/**"))
@@ -64,7 +76,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(3)
+    @Order(4)
     SecurityFilterChain refreshTokenFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/refresh/**"))
@@ -75,21 +87,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(1)
-    SecurityFilterChain registrationFilterChain(HttpSecurity httpSecurity) throws Exception {
+    @Order(5)
+    SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/sellers/register/**", "/api/fkv1/customers/register/**", "/api/fkv1/verify-email/**"))
-                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new JwtFilter(jwtService, accessTokenRepo), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
-    private AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(passwordEncoder());
-        provider.setUserDetailsService(userDetailService);
-        return provider;
-    }
+//    private AuthenticationProvider authenticationProvider() {
+//        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+//        provider.setPasswordEncoder(passwordEncoder());
+//        provider.setUserDetailsService(userDetailService);
+//        return provider;
+//    }
 
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {

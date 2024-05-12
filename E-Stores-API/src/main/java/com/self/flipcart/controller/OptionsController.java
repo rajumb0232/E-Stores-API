@@ -31,7 +31,7 @@ public class OptionsController {
                 .body(Arrays.stream(TopCategory.values()).map(TopCategory::getName).collect(Collectors.toList()));
     }
 
-    @GetMapping("/top-category/{topCategory}/sub-categories")
+    @GetMapping("/top-categories/{topCategory}/sub-categories")
     public ResponseEntity<List<String>> getSubCategories(@PathVariable String topCategory) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
