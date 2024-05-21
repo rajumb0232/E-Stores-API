@@ -2,7 +2,6 @@ package com.devb.estores.exceptionhandlers;
 
 import com.devb.estores.exceptions.*;
 import com.devb.estores.util.ErrorStructure;
-import com.self.flipkart.exceptions.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
