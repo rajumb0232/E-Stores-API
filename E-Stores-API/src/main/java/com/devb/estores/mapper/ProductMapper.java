@@ -3,11 +3,9 @@ package com.devb.estores.mapper;
 import com.devb.estores.enums.AvailabilityStatus;
 import com.devb.estores.model.*;
 import com.devb.estores.responsedto.*;
-import com.self.flipkart.model.*;
 import com.devb.estores.requestdto.ProductRequest;
 import com.devb.estores.requestdto.SimpleProductRequest;
 import com.devb.estores.requestdto.VaryingProductRequest;
-import com.self.flipkart.responsedto.*;
 
 import java.util.HashSet;
 
