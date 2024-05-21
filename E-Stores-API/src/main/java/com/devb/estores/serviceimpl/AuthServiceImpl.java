@@ -19,7 +19,6 @@ import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
 import com.devb.estores.util.ResponseStructure;
 import com.devb.estores.util.SimpleResponseStructure;
-import com.self.flipkart.exceptions.*;
 import com.devb.estores.responsedto.UserResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;

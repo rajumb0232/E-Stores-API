@@ -5,12 +5,13 @@ spring:
     username: postgres
     password: root
   jpa:
+    open-in-view: false
     show-sql: true
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+#        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
 # MongoDB Configuration
