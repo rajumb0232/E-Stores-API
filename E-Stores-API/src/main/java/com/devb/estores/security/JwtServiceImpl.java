@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.Map;
 import java.util.function.Function;
 
 
@@ -28,19 +27,21 @@ public class JwtServiceImpl implements JwtService {
     @Value("${token.expiry.refresh.seconds}")
     private long refreshTokenExpirySeconds;
 
+    public static final String CLAIM_ROLES = "roles";
+
     public String generateAccessToken(String username, String roles) {
         log.info("Generating Access Token...");
-        return createJwtToken(Maps.of("roles", roles).build(), username, accessTokenExpirySeconds * 1000L);
+        return createJwtToken(roles, username, accessTokenExpirySeconds * 1000L);
     }
 
-    public String generateRefreshToken(String username, String role) {
+    public String generateRefreshToken(String username, String roles) {
         log.info("Generating Refresh Token...");
-        return createJwtToken(Maps.of("roles", role).build(), username, refreshTokenExpirySeconds * 1000L);
+        return createJwtToken(roles, username, refreshTokenExpirySeconds * 1000L);
     }
 
-    private String createJwtToken(Map<String, String> claims, String username, long expiryDuration) {
+    private String createJwtToken(String roles, String username, long expiryDuration) {
         return Jwts.builder()
-                .setClaims(claims)
+                .setClaims(Maps.of(CLAIM_ROLES, roles).build())
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date((System.currentTimeMillis() + expiryDuration)))
@@ -60,7 +61,7 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String extractUserRoles(String token) {
-        return parseClaims(token).get("roles", String.class);
+        return parseClaims(token).get(CLAIM_ROLES, String.class);
     }
 
     @Override
