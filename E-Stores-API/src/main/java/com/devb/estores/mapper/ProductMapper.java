@@ -11,6 +11,12 @@ import java.util.HashSet;
 
 public class ProductMapper {
 
+    private ProductMapper() {
+        /*
+         * Created private constructor to avoid Instantiation of class
+         * */
+    }
+
     /**
      * The method used to map the product entity to product response
      * The method doesn't map the fields such as avgRating, totalOrders, totalReviews which has to be generated on the fly

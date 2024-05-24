@@ -9,17 +9,23 @@ import java.util.List;
 import java.util.Set;
 
 public class VariantMapper {
-    public static List<VariantResponse> mapToVariantResponseList(Set<Variant> variants) {
-        if(variants != null)
-        return variants.stream().map(variant -> VariantResponse.builder()
-                .variantId(variant.getVariantId())
-                .price(variant.getPrice())
-                .metricType(variant.getMetricType())
-                .specifications(variant.getSpecifications())
-                .unitsAvailableByMetric(variant.getUnitsAvailableByMetric())
-                .build()).toList();
 
-        else return new ArrayList<>();
+    private VariantMapper() {
+        /*
+         * Created private constructor to avoid Instantiation of class
+         * */
+    }
+
+    public static List<VariantResponse> mapToVariantResponseList(Set<Variant> variants) {
+        return variants != null ?
+                variants.stream().map(variant -> VariantResponse.builder()
+                        .variantId(variant.getVariantId())
+                        .price(variant.getPrice())
+                        .metricType(variant.getMetricType())
+                        .specifications(variant.getSpecifications())
+                        .unitsAvailableByMetric(variant.getUnitsAvailableByMetric())
+                        .build()).toList()
+                : new ArrayList<>();
     }
 
     /**
@@ -30,11 +36,11 @@ public class VariantMapper {
      * (if the provided method parameter is null returns an empty ArrayList)
      */
     public static Variant mapToVariantEntity(VariantRequest variant) {
-            return  Variant.builder()
-                        .price(variant.getPrice())
-                        .specifications(variant.getSpecifications())
-                        .metricType(variant.getMetricType())
-                        .unitsAvailableByMetric(variant.getUnitsAvailableByMetric())
-                        .build();
+        return Variant.builder()
+                .price(variant.getPrice())
+                .specifications(variant.getSpecifications())
+                .metricType(variant.getMetricType())
+                .unitsAvailableByMetric(variant.getUnitsAvailableByMetric())
+                .build();
     }
 }
