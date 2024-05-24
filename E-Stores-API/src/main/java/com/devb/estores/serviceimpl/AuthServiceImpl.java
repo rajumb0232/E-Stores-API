@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
     @Value("${token.expiry.refresh.seconds}")
     private long refreshTokenExpirySeconds;
 
-    private String failedRefresh = "Failed to refresh login";
+    public static final String FAILED_REFRESH = "Failed to refresh login";
 
     @Override
     public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
@@ -174,13 +174,13 @@ public class AuthServiceImpl implements AuthService {
                             .accessExpiration(accessTokenExpirySeconds)
                             .refreshExpiration(refreshTokenExpirySeconds)
                             .build()));
-        }).orElseThrow(() -> new UsernameNotFoundException(failedRefresh));
+        }).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
         else throw new UsernameNotFoundException("Authentication failed");
     }
 
     @Override
     public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken) {
-        if (refreshToken == null) throw new UserNotLoggedInException(failedRefresh);
+        if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
         String username = jwtService.extractUsername(refreshToken);
         Date refreshExpiration = jwtService.extractExpiry(refreshToken);
@@ -207,7 +207,7 @@ public class AuthServiceImpl implements AuthService {
 
         HttpHeaders headers = new HttpHeaders();
 
-        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(failedRefresh));
+        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
         // validating if the accessToken is not already present
         if (accessToken == null) this.generateAccessToken(user, headers);
 
