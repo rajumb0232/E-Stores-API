@@ -25,14 +25,10 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -54,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private final AccessTokenRepo accessTokenRepo;
     private final RefreshTokenRepo refreshTokenRepo;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender javaMailSender;
+    private final MailService mailService;
     private final CacheStore<OtpModel> otpCache;
     private final CacheStore<User> userCacheStore;
     private final JwtService jwtService;
@@ -66,8 +62,7 @@ public class AuthServiceImpl implements AuthService {
                            AccessTokenRepo accessTokenRepo,
                            RefreshTokenRepo refreshTokenRepo,
                            PasswordEncoder passwordEncoder,
-                           JavaMailSender javaMailSender,
-                           CacheStore<OtpModel> otpCache,
+                           MailService mailService, CacheStore<OtpModel> otpCache,
                            CacheStore<User> userCacheStore,
                            JwtService jwtService,
                            AuthenticationManager authenticationManager,
@@ -77,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
         this.accessTokenRepo = accessTokenRepo;
         this.refreshTokenRepo = refreshTokenRepo;
         this.passwordEncoder = passwordEncoder;
-        this.javaMailSender = javaMailSender;
+        this.mailService = mailService;
         this.otpCache = otpCache;
         this.userCacheStore = userCacheStore;
         this.jwtService = jwtService;
@@ -106,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate the OTP and provide the ID of the OTP as a path variable to the confirmation link.
         OtpModel otp = OtpModel.builder()
-                .otp(generateOTP())
+                .otp(random.nextInt(100000, 999999))
                 .email(user.getEmail()).build();
         otpCache.add(otp.getEmail(), otp);
 
@@ -368,12 +363,8 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 }
 
-    private Integer generateOTP() {
-       return random.nextInt(100000, 999999);
-    }
-
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
-        sendMail(MessageData.builder()
+        mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
                 .subject("Verify your email for flipkart")
                 .sentDate(new Date())
@@ -388,20 +379,8 @@ public class AuthServiceImpl implements AuthService {
                 ).build());
     }
 
-    @Async
-    private void sendMail(MessageData messageData) throws MessagingException {
-        MimeMessage message = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-        helper.setTo(messageData.getTo());
-        helper.setSubject(messageData.getSubject());
-        helper.setSentDate(messageData.getSentDate());
-        helper.setText(messageData.getText(), true);
-        javaMailSender.send(message);
-    }
-
-    @Async
     private void sendConfirmationMail(User user) throws MessagingException {
-        sendMail(MessageData.builder()
+        mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
                 .subject("Welcome to Flipkart family")
                 .sentDate(new Date())
