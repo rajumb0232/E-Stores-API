@@ -4,25 +4,30 @@ import com.devb.estores.model.Address;
 import com.devb.estores.requestdto.AddressRequest;
 import com.devb.estores.responsedto.AddressResponse;
 
-import java.util.stream.Collectors;
-
 public class AddressMapper {
+
+    private AddressMapper() {
+        /*
+         * Created private constructor to avoid Instantiation of class
+         * */
+    }
+
     public static AddressResponse mapToAddressResponse(Address address) {
-        if(address != null)
-        return AddressResponse.builder()
-                .addressLine1(address.getAddressLine1())
-                .addressLine2(address.getAddressLine2())
-                .areaVillage(address.getAreaVillage())
-                .addressId(address.getAddressId())
-                .cityDistrict(address.getCityDistrict())
-                .state(address.getState())
-                .Country(address.getCountry())
-                .pincode(address.getPincode())
-                .contacts(address.getContacts().stream()
-                        .map(ContactMapper::mapToContactResponse)
-                        .collect(Collectors.toList()))
-                .build();
-        else return null;
+        return address != null ?
+                AddressResponse.builder()
+                        .addressLine1(address.getAddressLine1())
+                        .addressLine2(address.getAddressLine2())
+                        .areaVillage(address.getAreaVillage())
+                        .addressId(address.getAddressId())
+                        .cityDistrict(address.getCityDistrict())
+                        .state(address.getState())
+                        .Country(address.getCountry())
+                        .pincode(address.getPincode())
+                        .contacts(address.getContacts().stream()
+                                .map(ContactMapper::mapToContactResponse)
+                                .toList())
+                        .build()
+                : null;
     }
 
     public static Address mapToAddressEntity(AddressRequest addressRequest, Address address) {

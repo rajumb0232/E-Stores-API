@@ -8,6 +8,12 @@ import com.devb.estores.responsedto.StoreResponse;
 
 public class StoreMapper {
 
+    private StoreMapper() {
+        /*
+         * Created private constructor to avoid Instantiation of class
+         * */
+    }
+
     public static StoreResponse mapToStorePageResponse(Store store) {
         return StorePageResponse.builder()
                 .storeName(store.getStoreName())

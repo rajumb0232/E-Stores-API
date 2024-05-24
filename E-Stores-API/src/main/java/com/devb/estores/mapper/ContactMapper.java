@@ -6,6 +6,12 @@ import com.devb.estores.responsedto.ContactResponse;
 
 public class ContactMapper {
 
+    private ContactMapper() {
+        /*
+         * Created private constructor to avoid Instantiation of class
+         * */
+    }
+
     public static Contact mapToContactEntity(ContactRequest contactRequest, Contact contact) {
         contact.setContactNumber(contactRequest.getContactNumber());
         contact.setContactName(contactRequest.getContactName());
@@ -13,14 +19,14 @@ public class ContactMapper {
         return contact;
     }
 
-    public static ContactResponse mapToContactResponse(Contact contact){
-        if(contact != null)
-        return ContactResponse.builder()
-                .contactId(contact.getContactId())
-                .contactName(contact.getContactName())
-                .contactNumber(contact.getContactNumber())
-                .isPrimary(contact.isPrimary())
-                .build();
-        else return null;
+    public static ContactResponse mapToContactResponse(Contact contact) {
+        return contact != null ?
+                ContactResponse.builder()
+                        .contactId(contact.getContactId())
+                        .contactName(contact.getContactName())
+                        .contactNumber(contact.getContactNumber())
+                        .isPrimary(contact.isPrimary())
+                        .build()
+                : null;
     }
 }
