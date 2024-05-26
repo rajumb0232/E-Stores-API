@@ -2,7 +2,7 @@ package com.devb.estores.security;
 
 import com.devb.estores.repository.AccessTokenRepo;
 import com.devb.estores.repository.RefreshTokenRepo;
-import com.devb.estores.securityfilters.JwtFilter;
+import com.devb.estores.securityfilters.AuthFilter;
 import com.devb.estores.securityfilters.LoginFilter;
 import com.devb.estores.securityfilters.RefreshFilter;
 import lombok.AllArgsConstructor;
@@ -90,7 +90,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new JwtFilter(jwtService, accessTokenRepo), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter(jwtService, accessTokenRepo), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
