@@ -9,6 +9,12 @@ import java.io.IOException;
 
 public class FilterExceptionHandler {
 
+    private FilterExceptionHandler() {
+        /*
+         * Created private constructor to avoid Instantiation of class
+         * */
+    }
+
     public static void handleException(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("Application/json");
