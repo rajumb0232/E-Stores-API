@@ -1,16 +1,15 @@
 package com.devb.estores.controller;
 
+import com.devb.estores.requestdto.SimpleProductRequest;
 import com.devb.estores.requestdto.VaryingProductRequest;
+import com.devb.estores.responsedto.ProductResponse;
 import com.devb.estores.service.ProductService;
 import com.devb.estores.util.ResponseStructure;
 import com.devb.estores.util.SimpleResponseStructure;
-import com.devb.estores.requestdto.SimpleProductRequest;
-import com.devb.estores.responsedto.ProductResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -33,8 +32,8 @@ public class ProductController {
     }
 
     @PatchMapping("/products/{productId}")
-    public ResponseEntity<SimpleResponseStructure> updateVariantBy(@PathVariable String productId, @RequestParam ArrayList<String> spec_names){
-        return productService.updateVariantBy(productId, spec_names);
+    public ResponseEntity<SimpleResponseStructure> updateVariantBy(@PathVariable String productId, @RequestParam List<String> specNames){
+        return productService.updateVariantBy(productId, specNames);
     }
 
     @GetMapping("/products/{productId}")

@@ -18,5 +18,5 @@ public class StoreReport {
     private int ordersReturned;
     private double totalRevenue;
 
-    private List<ProductReport> ProductReports;
+    private List<ProductReport> productReports;
 }

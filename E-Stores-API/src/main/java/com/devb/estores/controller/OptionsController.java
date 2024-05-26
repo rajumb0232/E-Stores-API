@@ -5,17 +5,18 @@ import com.devb.estores.dto.TopCategoryDTO;
 import com.devb.estores.enums.State;
 import com.devb.estores.enums.SubCategory;
 import com.devb.estores.enums.TopCategory;
-import com.devb.estores.util.DistrictList;
 import com.devb.estores.repository.ProductTypeRepo;
 import lombok.AllArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${app.base_url}")
@@ -28,7 +29,7 @@ public class OptionsController {
     public ResponseEntity<List<String>> getPrimeCategories() {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
-                .body(Arrays.stream(TopCategory.values()).map(TopCategory::getName).collect(Collectors.toList()));
+                .body(Arrays.stream(TopCategory.values()).map(TopCategory::getName).toList());
     }
 
     @GetMapping("/top-categories/{topCategory}/sub-categories")
@@ -36,7 +37,7 @@ public class OptionsController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
                 .body(TopCategory.valueOf(topCategory.toUpperCase()).getSubCategories()
-                        .stream().map(SubCategory::getName).collect(Collectors.toList()));
+                        .stream().map(SubCategory::getName).toList());
     }
 
     @GetMapping("/categories")
@@ -51,9 +52,9 @@ public class OptionsController {
                                 .categoryName(subCategory.name())
                                 .productTypes(typeRepo.findTypeNameBySubCategory(subCategory)
                                         .stream().map(ProductTypeRepo.TypeNameProjection::getTypeName)
-                                        .collect(Collectors.toList())).build()
-                        ).collect(Collectors.toList())).build()
-        ).collect(Collectors.toList());
+                                        .toList()).build()
+                        ).toList()).build()
+        ).toList();
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(15)))
@@ -66,13 +67,13 @@ public class OptionsController {
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
                 .body(Arrays.stream(State.values())
                         .map(state -> state.name().toLowerCase())
-                        .collect(Collectors.toList()));
+                        .toList());
     }
 
     @GetMapping("/states/{stateName}/districts")
     public ResponseEntity<List<String>> getDistrictsByState(@PathVariable String stateName) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
-                .body(Arrays.asList(DistrictList.of(stateName)));
+                .body(State.valueOf(stateName).getDistricts());
     }
 }

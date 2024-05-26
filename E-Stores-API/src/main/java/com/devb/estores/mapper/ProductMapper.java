@@ -69,9 +69,9 @@ public class ProductMapper {
     }
 
     private static String validateAndGetProductAvailabilityStatus(int quantity) {
-        return quantity < 1
-                ? AvailabilityStatus.OUT_OF_STOCK.name()
-                : (quantity > 1 && quantity < 10)
+        if(quantity < 1){
+            return AvailabilityStatus.OUT_OF_STOCK.name();
+        } else return (quantity > 1 && quantity < 10)
                 ? AvailabilityStatus.ONLY_FEW_LEFT.name()
                 : AvailabilityStatus.AVAILABLE.name();
     }

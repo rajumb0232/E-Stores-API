@@ -41,7 +41,6 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public ResponseEntity<ResponseStructure<AddressResponse>> updateAddress(AddressRequest addressRequest, String addressId) {
-        System.out.println(addressRequest);
         return addressRepo.findById(addressId).map(address -> {
             address = addressRepo.save(AddressMapper.mapToAddressEntity(addressRequest, address));
             return ResponseEntity.ok(new ResponseStructure<AddressResponse>()

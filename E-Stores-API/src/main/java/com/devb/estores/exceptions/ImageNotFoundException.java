@@ -5,7 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class InvalidDisplayTypeException extends RuntimeException {
-   private final String message;
+public class ImageNotFoundException extends RuntimeException{
+    private final String message;
 }
-

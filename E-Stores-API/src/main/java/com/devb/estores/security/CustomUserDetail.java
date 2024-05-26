@@ -7,16 +7,15 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class CustomUserDetail implements UserDetails {
 
-    private User user;
+    private transient User user;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.name())).collect(Collectors.toList());
+        return user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.name())).toList();
     }
 
     @Override

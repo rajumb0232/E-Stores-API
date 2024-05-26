@@ -21,7 +21,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
@@ -46,30 +45,41 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (accessToken != null) {
                 log.info("Extracting credentials...");
+
                 if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
                     throw new UserNotLoggedInException("Failed to authenticate the user");
+
                 username = jwtService.extractUsername(accessToken);
                 roles = jwtService.extractUserRoles(accessToken);
+
             }
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
                 roles = roles.replace('[', ' ').replace(']', ' ').trim();
                 List<String> roleList = Arrays.asList(roles.split(", "));
+
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username,
-                        null, roleList.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                        null, roleList.stream().map(SimpleGrantedAuthority::new).toList());
+
                 token.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
                 log.info("JWT Authentication Successful");
+
             }
 
         } catch (ExpiredJwtException ex) {
             FilterExceptionHandler.handleException(response, "Your AccessToken is expired, refresh your login");
+
         } catch (JwtException ex) {
             FilterExceptionHandler.handleException(response, "Authentication Failed | " + ex.getMessage());
+
         } catch (UserNotLoggedInException ex) {
             log.info("Authentication failed | User already logged in");
             FilterExceptionHandler.handleException(response, "User already logged in | send a refresh request or try again after clearing cookies");
+
         }
+
         filterChain.doFilter(request, response);
     }
 }

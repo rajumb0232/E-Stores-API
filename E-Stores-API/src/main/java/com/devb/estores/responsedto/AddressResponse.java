@@ -16,7 +16,7 @@ public class AddressResponse {
     private String areaVillage;
     private String cityDistrict;
     private String state;
-    private String Country;
+    private String country;
     private int pincode;
     private List<ContactResponse> contacts;
 }

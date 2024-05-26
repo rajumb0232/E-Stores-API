@@ -15,8 +15,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepo.findByUsername(username).map(
-                user -> new CustomUserDetail(user)).orElseThrow(
-                () -> new UsernameNotFoundException("Authentication Failed."));
+        return userRepo.findByUsername(username).map(CustomUserDetail::new)
+                .orElseThrow(() -> new UsernameNotFoundException("Authentication Failed."));
     }
 }
