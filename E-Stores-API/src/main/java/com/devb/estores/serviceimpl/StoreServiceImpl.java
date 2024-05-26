@@ -47,7 +47,7 @@ public class StoreServiceImpl implements StoreService {
 
             Store store = StoreMapper.mapToStoreEntity(storeRequest, exStore);
             store.setTopCategory(exStore.getTopCategory());
-            Store uniqueStore = storeRepo.save(store);
+            store = storeRepo.save(store);
 
             return ResponseEntity.ok(new ResponseStructure<StoreResponse>()
                     .setStatus(HttpStatus.OK.value())

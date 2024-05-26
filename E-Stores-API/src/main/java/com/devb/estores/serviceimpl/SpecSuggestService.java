@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+
 @Service
 @AllArgsConstructor
 public class SpecSuggestService {
@@ -12,6 +13,8 @@ public class SpecSuggestService {
     private final ProductTypeRepo productTypeRepo;
 
     public void updateSpecSuggest(Map<String, String> specifications, String productTypeId) {
-        // The method will later be implemented to save the data to the database
+        /*
+         * The method will later be implemented to save the data to the database
+         * */
     }
 }

@@ -1,5 +1,6 @@
 package com.devb.estores.serviceimpl;
 
+import com.devb.estores.exceptions.InvalidVariantGroupException;
 import com.devb.estores.mapper.VariantMapper;
 import com.devb.estores.model.Variant;
 import com.devb.estores.model.VaryingProduct;
@@ -35,15 +36,13 @@ public class VariantServiceImpl implements VariantService {
              * */
             if (product instanceof VaryingProduct varyingProduct) {
                 variantRequest.forEach(req -> {
-
-                    /* Validating if the given set specs are same are the defined variantBy in the product
+                    /*
+                     * Validating if the given set specs are same are the defined variantBy in the product
                      * This ensures that there are same exact set of specs in every variant with differing values
                      * */
                     Set<String> names = new HashSet<>(req.getSpecifications().keySet());
-                    System.out.println(names);
-                    System.out.println(varyingProduct.getVariantBy());
                     if (!varyingProduct.getVariantBy().equals(names))
-                        throw new RuntimeException("Invalid variant group made. expected to be a group of " + varyingProduct.getVariantBy());
+                        throw new InvalidVariantGroupException("Invalid variant group made. expected to be a group of " + varyingProduct.getVariantBy());
 
                 });
 
