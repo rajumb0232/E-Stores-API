@@ -67,14 +67,20 @@ public class ContactServiceImpl implements ContactService {
     @Override
     public ResponseEntity<ResponseStructure<List<Contact>>> deleteContactById(String contactId) {
         return contactRepo.findById(contactId).map(contact -> {
+            /*
+            * Deleting the contact
+            * */
             contactRepo.delete(contact);
+            /*
+             * Finding the contacts based on the address and updating the other address to primary if present
+             * */
             List<Contact> contacts = contactRepo.findAllByAddress(contact.getAddress());
-            if (contacts.size() > 0) {
-                if (!contacts.get(0).isPrimary()) {
+
+            if (!contacts.isEmpty() && (!contacts.get(0).isPrimary())) {
                     contacts.get(0).setPrimary(true);
                     contactRepo.save(contacts.get(0));
-                }
             }
+
             return ResponseEntity.ok(new ResponseStructure<List<Contact>>()
                     .setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully deleted the contact")
