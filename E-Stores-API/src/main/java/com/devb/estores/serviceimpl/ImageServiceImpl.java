@@ -1,6 +1,7 @@
 package com.devb.estores.serviceimpl;
 
 import com.devb.estores.enums.ImageType;
+import com.devb.estores.exceptions.ImageNotFoundException;
 import com.devb.estores.model.Image;
 import com.devb.estores.repository.ImageRepo;
 import com.devb.estores.repository.StoreRepo;
@@ -26,7 +27,6 @@ public class ImageServiceImpl implements ImageService {
 
     @Override
     public ResponseEntity<ResponseStructure<String>> addStoreImage(String storeId, MultipartFile image) {
-        System.err.println(storeId);
         return storeRepo.findById(storeId).map(store -> {
             if (store.getLogoLink() != null) {
                 String[] a = store.getLogoLink().split("/");
@@ -38,7 +38,7 @@ public class ImageServiceImpl implements ImageService {
             try {
                 storeImage.setImageBytes(image.getBytes());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ImageNotFoundException("Failed to find the Image");
             }
             Image i = imageRepo.save(storeImage);
             store.setLogoLink("/images/" + i.getImageId());
