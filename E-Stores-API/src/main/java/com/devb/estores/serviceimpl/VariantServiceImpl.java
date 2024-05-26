@@ -1,5 +1,6 @@
 package com.devb.estores.serviceimpl;
 
+import com.devb.estores.exceptions.InvalidOperationException;
 import com.devb.estores.exceptions.InvalidVariantGroupException;
 import com.devb.estores.mapper.VariantMapper;
 import com.devb.estores.model.Variant;
@@ -26,7 +27,6 @@ public class VariantServiceImpl implements VariantService {
 
     private VariantRepo variantRepo;
     private ProductRepo productRepo;
-    private SpecSuggestService specSuggestService;
 
     @Override
     public ResponseEntity<ResponseStructure<List<VariantResponse>>> updateVariants(List<VariantRequest> variantRequest, String productId) {
@@ -43,10 +43,9 @@ public class VariantServiceImpl implements VariantService {
                     Set<String> names = new HashSet<>(req.getSpecifications().keySet());
                     if (!varyingProduct.getVariantBy().equals(names))
                         throw new InvalidVariantGroupException("Invalid variant group made. expected to be a group of " + varyingProduct.getVariantBy());
-
                 });
-
-                /* Saving the variants to the database by iterating on each
+                /*
+                 * Saving the variants to the database by iterating on each
                  * */
                 Set<Variant> variants = variantRequest.stream()
                         .map(VariantMapper::mapToVariantEntity)
@@ -60,7 +59,7 @@ public class VariantServiceImpl implements VariantService {
                         .setData(VariantMapper.mapToVariantResponseList(variants))
                         .setMessage("Variants added successfully")
                         .setStatus(HttpStatus.OK.value()));
-            } else throw new RuntimeException("The product is simple product, not a varying product");
+            } else throw new InvalidOperationException("The product is simple product, not a varying product");
         }).orElseThrow();
     }
 }
