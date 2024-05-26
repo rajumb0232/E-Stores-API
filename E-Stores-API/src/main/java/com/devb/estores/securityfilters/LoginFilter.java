@@ -27,7 +27,7 @@ public class LoginFilter extends OncePerRequestFilter {
             log.info("Login request is authentic");
         }catch (UserAlreadyLoggedInException e){
             log.info("Failed to login, user already logged in");
-            FilterExceptionHandler.handleException(response, e.getMessage());
+            FilterHelper.handleException(response, e.getMessage());
         }
         filterChain.doFilter(request, response);
     }
