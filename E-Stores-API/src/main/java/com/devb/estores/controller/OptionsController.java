@@ -6,7 +6,6 @@ import com.devb.estores.enums.State;
 import com.devb.estores.enums.SubCategory;
 import com.devb.estores.enums.TopCategory;
 import com.devb.estores.repository.ProductTypeRepo;
-import com.devb.estores.util.DistrictList;
 import lombok.AllArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -75,6 +74,6 @@ public class OptionsController {
     public ResponseEntity<List<String>> getDistrictsByState(@PathVariable String stateName) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
-                .body(Arrays.asList(DistrictList.of(stateName)));
+                .body(State.valueOf(stateName).getDistricts());
     }
 }
