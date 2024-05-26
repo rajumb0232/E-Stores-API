@@ -28,9 +28,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @AllArgsConstructor
 public class SecurityConfig {
 
-    private CustomUserDetailsService userDetailService;
-    //    private JwtFilter jwtFilter;
-//    private LoginFilter loginFilter;
     private JwtService jwtService;
     private AccessTokenRepo accessTokenRepo;
     private RefreshTokenRepo refreshTokenRepo;
@@ -96,13 +93,6 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtFilter(jwtService, accessTokenRepo), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
-//    private AuthenticationProvider authenticationProvider() {
-//        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-//        provider.setPasswordEncoder(passwordEncoder());
-//        provider.setUserDetailsService(userDetailService);
-//        return provider;
-//    }
 
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
