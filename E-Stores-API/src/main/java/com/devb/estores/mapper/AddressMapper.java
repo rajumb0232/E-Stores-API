@@ -21,7 +21,7 @@ public class AddressMapper {
                         .addressId(address.getAddressId())
                         .cityDistrict(address.getCityDistrict())
                         .state(address.getState())
-                        .Country(address.getCountry())
+                        .country(address.getCountry())
                         .pincode(address.getPincode())
                         .contacts(address.getContacts().stream()
                                 .map(ContactMapper::mapToContactResponse)
