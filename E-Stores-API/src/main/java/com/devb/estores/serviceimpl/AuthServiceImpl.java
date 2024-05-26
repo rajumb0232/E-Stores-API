@@ -87,7 +87,7 @@ public class AuthServiceImpl implements AuthService {
     private long refreshTokenExpirySeconds;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
-
+    public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
     @Override
     public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
@@ -123,10 +123,9 @@ public class AuthServiceImpl implements AuthService {
         OtpModel otp = otpCache.get(otpModel.getEmail());
         User user = userCacheStore.get(otpModel.getEmail());
 
-        String errorMessage = "Failed to verify OTP";
-        if (otp == null) throw new OtpExpiredException(errorMessage);
-        if (user == null) throw new RegistrationSessionExpiredException(errorMessage);
-        if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException(errorMessage);
+        if (otp == null) throw new OtpExpiredException(FAILED_OTP_VERIFICATION);
+        if (user == null) throw new RegistrationSessionExpiredException(FAILED_OTP_VERIFICATION);
+        if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException(FAILED_OTP_VERIFICATION);
 
         user.setEmailVerified(true);
         user = userRepo.save(user);

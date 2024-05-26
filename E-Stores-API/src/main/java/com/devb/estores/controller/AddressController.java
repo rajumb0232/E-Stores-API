@@ -17,7 +17,6 @@ public class AddressController {
 
     @PostMapping("/stores/{storeId}/addresses")
     public ResponseEntity<ResponseStructure<AddressResponse>> addAddressToStore(@RequestBody AddressRequest addressRequest, @PathVariable String storeId){
-        System.err.println(storeId);
         return addressService.addAddressToStore(addressRequest, storeId);
     }
 
