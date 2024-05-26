@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class EmailNotFoundException extends RuntimeException {
-    String message;
+    private final  String message;
 }

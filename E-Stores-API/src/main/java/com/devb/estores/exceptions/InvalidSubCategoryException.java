@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class InvalidSubCategoryException extends RuntimeException {
-   private String message;
+   private final String message;
 }

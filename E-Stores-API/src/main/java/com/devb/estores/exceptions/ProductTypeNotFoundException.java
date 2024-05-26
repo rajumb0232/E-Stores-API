@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ProductTypeNotFoundException extends RuntimeException {
-    private String message;
+    private final String message;
 }

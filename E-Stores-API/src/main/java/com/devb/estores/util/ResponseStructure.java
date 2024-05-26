@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResponseStructure<T> extends Structure<T> {
+public class ResponseStructure<T> {
     private int status;
     private String message;
     private T data;

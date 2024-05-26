@@ -21,7 +21,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Slf4j
@@ -53,7 +52,7 @@ public class RefreshFilter extends OncePerRequestFilter {
                 List<String> roleList = Arrays.asList(roles.split(", "));
 
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username,
-                        null, roleList.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                        null, roleList.stream().map(SimpleGrantedAuthority::new).toList());
                 token.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
                 log.info("JWT Authentication Successful");

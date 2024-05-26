@@ -14,25 +14,21 @@ import com.devb.estores.repository.UserRepo;
 import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
+import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
 import com.devb.estores.util.ResponseStructure;
 import com.devb.estores.util.SimpleResponseStructure;
-import com.devb.estores.responsedto.UserResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -46,7 +42,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -55,33 +50,35 @@ public class AuthServiceImpl implements AuthService {
     private final AccessTokenRepo accessTokenRepo;
     private final RefreshTokenRepo refreshTokenRepo;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender javaMailSender;
+    private final MailService mailService;
     private final CacheStore<OtpModel> otpCache;
     private final CacheStore<User> userCacheStore;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final CookieManager cookieManager;
+    private final Random random;
 
     public AuthServiceImpl(UserRepo userRepo,
                            AccessTokenRepo accessTokenRepo,
                            RefreshTokenRepo refreshTokenRepo,
                            PasswordEncoder passwordEncoder,
-                           JavaMailSender javaMailSender,
-                           CacheStore<OtpModel> otpCache,
+                           MailService mailService, CacheStore<OtpModel> otpCache,
                            CacheStore<User> userCacheStore,
                            JwtService jwtService,
                            AuthenticationManager authenticationManager,
-                           CookieManager cookieManager) {
+                           CookieManager cookieManager,
+                           Random random) {
         this.userRepo = userRepo;
         this.accessTokenRepo = accessTokenRepo;
         this.refreshTokenRepo = refreshTokenRepo;
         this.passwordEncoder = passwordEncoder;
-        this.javaMailSender = javaMailSender;
+        this.mailService = mailService;
         this.otpCache = otpCache;
         this.userCacheStore = userCacheStore;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
         this.cookieManager = cookieManager;
+        this.random = random;
     }
 
     @Value("${token.expiry.access.seconds}")
@@ -89,6 +86,8 @@ public class AuthServiceImpl implements AuthService {
     @Value("${token.expiry.refresh.seconds}")
     private long refreshTokenExpirySeconds;
 
+    public static final String FAILED_REFRESH = "Failed to refresh login";
+    public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
     @Override
     public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
@@ -102,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate the OTP and provide the ID of the OTP as a path variable to the confirmation link.
         OtpModel otp = OtpModel.builder()
-                .otp(generateOTP())
+                .otp(random.nextInt(100000, 999999))
                 .email(user.getEmail()).build();
         otpCache.add(otp.getEmail(), otp);
 
@@ -124,9 +123,9 @@ public class AuthServiceImpl implements AuthService {
         OtpModel otp = otpCache.get(otpModel.getEmail());
         User user = userCacheStore.get(otpModel.getEmail());
 
-        if (otp == null) throw new OtpExpiredException("Failed to verify OTP");
-        if (user == null) throw new RegistrationSessionExpiredException("Failed to verify OTP");
-        if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException("Failed to verify OTP");
+        if (otp == null) throw new OtpExpiredException(FAILED_OTP_VERIFICATION);
+        if (user == null) throw new RegistrationSessionExpiredException(FAILED_OTP_VERIFICATION);
+        if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException(FAILED_OTP_VERIFICATION);
 
         user.setEmailVerified(true);
         user = userRepo.save(user);
@@ -164,18 +163,18 @@ public class AuthServiceImpl implements AuthService {
                     .setData(AuthResponse.builder()
                             .userId(user.getUserId())
                             .username(user.getUsername())
-                            .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
+                            .roles(user.getRoles().stream().map(UserRole::name).toList())
                             .isAuthenticated(true)
                             .accessExpiration(accessTokenExpirySeconds)
                             .refreshExpiration(refreshTokenExpirySeconds)
                             .build()));
-        }).orElseThrow(() -> new UsernameNotFoundException("Failed to refresh login"));
+        }).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
         else throw new UsernameNotFoundException("Authentication failed");
     }
 
     @Override
     public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken) {
-        if (refreshToken == null) throw new UserNotLoggedInException("Failed to refresh login");
+        if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
         String username = jwtService.extractUsername(refreshToken);
         Date refreshExpiration = jwtService.extractExpiry(refreshToken);
@@ -202,7 +201,7 @@ public class AuthServiceImpl implements AuthService {
 
         HttpHeaders headers = new HttpHeaders();
 
-        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Failed to refresh login"));
+        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
         // validating if the accessToken is not already present
         if (accessToken == null) this.generateAccessToken(user, headers);
 
@@ -220,7 +219,7 @@ public class AuthServiceImpl implements AuthService {
                 .setData(AuthResponse.builder()
                         .userId(user.getUserId())
                         .username(user.getUsername())
-                        .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
+                        .roles(user.getRoles().stream().map(UserRole::name).toList())
                         .isAuthenticated(true)
                         .accessExpiration(evaluatedAccessExpiration)
                         .refreshExpiration(evaluatedRefreshExpiration)
@@ -250,18 +249,17 @@ public class AuthServiceImpl implements AuthService {
 
         return userRepo.findByUsername(username).map(user -> {
             // blocking all other access tokens
-            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlocked(user, false).stream()
-                    .peek(at -> {
+            accessTokenRepo.findAllByUserAndIsBlocked(user, false)
+                    .forEach(at -> {
                         if (!at.getToken().equals(accessToken)) at.setBlocked(true);
-                    })
-                    .collect(Collectors.toList());
-            accessTokenRepo.saveAll(accessTokens);
+                        accessTokenRepo.save(at);
+                    });
             // blocking all other refresh tokens
-            List<RefreshToken> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false).stream()
-                    .peek(rt -> {
+            refreshTokenRepo.findALLByUserAndIsBlocked(user, false)
+                    .forEach(rt -> {
                         if (!rt.getToken().equals(refreshToken)) rt.setBlocked(true);
-                    }).collect(Collectors.toList());
-            refreshTokenRepo.saveAll(refreshTokens);
+                        refreshTokenRepo.save(rt);
+                    });
 
             return ResponseEntity.ok(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully revoked access from all other devices"));
@@ -275,13 +273,17 @@ public class AuthServiceImpl implements AuthService {
 
         return userRepo.findByUsername(username).map(user -> {
             // blocking all other access tokens
-            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlocked(user, false).stream()
-                    .peek(at -> at.setBlocked(true)).collect(Collectors.toList());
-            accessTokenRepo.saveAll(accessTokens);
+            accessTokenRepo.findAllByUserAndIsBlocked(user, false)
+                    .forEach(at -> {
+                        at.setBlocked(true);
+                        accessTokenRepo.save(at);
+                    });
             // blocking all other refresh tokens
-            List<RefreshToken> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false).stream()
-                    .peek(rt -> rt.setBlocked(true)).collect(Collectors.toList());
-            refreshTokenRepo.saveAll(refreshTokens);
+            refreshTokenRepo.findALLByUserAndIsBlocked(user, false)
+                    .forEach(rt -> {
+                        rt.setBlocked(true);
+                        refreshTokenRepo.save(rt);
+                    });
 
             // resetting tokens with blank value and 0 maxAge
             HttpHeaders headers = new HttpHeaders();
@@ -343,7 +345,7 @@ public class AuthServiceImpl implements AuthService {
         return UserResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
-                .roles(user.getRoles().stream().map(UserRole::name).collect(Collectors.toList()))
+                .roles(user.getRoles().stream().map(UserRole::name).toList())
                 .email(user.getEmail())
                 .isEmailVerified(user.isEmailVerified())
                 .build();
@@ -360,12 +362,8 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 }
 
-    private Integer generateOTP() {
-        return new Random().nextInt(100000, 999999);
-    }
-
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
-        sendMail(MessageData.builder()
+        mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
                 .subject("Verify your email for flipkart")
                 .sentDate(new Date())
@@ -380,20 +378,8 @@ public class AuthServiceImpl implements AuthService {
                 ).build());
     }
 
-    @Async
-    private void sendMail(MessageData messageData) throws MessagingException {
-        MimeMessage message = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-        helper.setTo(messageData.getTo());
-        helper.setSubject(messageData.getSubject());
-        helper.setSentDate(messageData.getSentDate());
-        helper.setText(messageData.getText(), true);
-        javaMailSender.send(message);
-    }
-
-    @Async
     private void sendConfirmationMail(User user) throws MessagingException {
-        sendMail(MessageData.builder()
+        mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
                 .subject("Welcome to Flipkart family")
                 .sentDate(new Date())

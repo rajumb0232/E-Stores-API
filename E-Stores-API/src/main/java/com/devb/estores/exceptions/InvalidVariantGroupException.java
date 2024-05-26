@@ -5,7 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class InvalidDisplayTypeException extends RuntimeException {
-   private final String message;
+public class InvalidVariantGroupException extends RuntimeException {
+    private final String message;
 }
-
