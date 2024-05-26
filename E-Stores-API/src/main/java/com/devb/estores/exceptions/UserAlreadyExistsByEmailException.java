@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class UserAlreadyExistsByEmailException extends RuntimeException {
-private String message;
+private final String message;
 }
