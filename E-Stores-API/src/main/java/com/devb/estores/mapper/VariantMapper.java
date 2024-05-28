@@ -35,12 +35,12 @@ public class VariantMapper {
      * @return List of variant,
      * (if the provided method parameter is null returns an empty ArrayList)
      */
-    public static Variant mapToVariantEntity(VariantRequest variant) {
+    public static Variant mapToVariantEntity(VariantRequest variantRequest) {
         return Variant.builder()
-                .price(variant.getPrice())
-                .specifications(variant.getSpecifications())
-                .metricType(variant.getMetricType())
-                .unitsAvailableByMetric(variant.getUnitsAvailableByMetric())
+                .price(variantRequest.getPrice())
+                .specifications(variantRequest.getSpecifications())
+                .metricType(variantRequest.getMetricType())
+                .unitsAvailableByMetric(variantRequest.getUnitsAvailableByMetric())
                 .build();
     }
 }
