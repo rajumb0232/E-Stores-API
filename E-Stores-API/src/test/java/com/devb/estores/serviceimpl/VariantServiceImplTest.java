@@ -116,5 +116,6 @@ class VariantServiceImplTest {
 
         // Act & Assert
         assertThrows(NoSuchElementException.class, () -> variantServiceImpl.updateVariants(new ArrayList<>(), productId));
+
     }
 }
