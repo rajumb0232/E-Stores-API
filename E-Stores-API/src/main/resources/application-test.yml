@@ -22,13 +22,6 @@ spring:
       port: 27017
       database: test_flipkartdb  # Use a different test database name
 
-  # MongoDB Configuration for testing (if needed)
-  data:
-    mongodb:
-      host: localhost
-      port: 27017
-      database: test_flipkartdb  # Use a different test database name
-
 logging:
   level:
     root: DEBUG
