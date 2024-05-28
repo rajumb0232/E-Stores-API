@@ -29,6 +29,10 @@ spring:
       port: 27017
       database: test_flipkartdb  # Use a different test database name
 
+logging:
+  level:
+    root: DEBUG
+
 # Server Configuration
 server:
   port: 7001  # Different port for testing if needed
