@@ -20,11 +20,12 @@ public class ContactServiceImpl implements ContactService {
 
     private final ContactRepo contactRepo;
     private final AddressRepo addressRepo;
+    private ContactMapper contactMapper;
 
     @Override
     public ResponseEntity<ResponseStructure<List<Contact>>> addContact(ContactRequest contactRequest, String addressId) {
         return addressRepo.findById(addressId).map(address -> {
-            Contact contact = ContactMapper.mapToContactEntity(contactRequest, new Contact());
+            Contact contact = contactMapper.mapToContactEntity(contactRequest, new Contact());
             contact.setAddress(address);
             contact = contactRepo.save(contact);
             return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseStructure<List<Contact>>()
@@ -37,7 +38,7 @@ public class ContactServiceImpl implements ContactService {
     @Override
     public ResponseEntity<ResponseStructure<List<Contact>>> updateContact(ContactRequest contactRequest, String contactId) {
         return contactRepo.findById(contactId).map(c -> {
-            Contact contact = contactRepo.save(ContactMapper.mapToContactEntity(contactRequest, c));
+            Contact contact = contactRepo.save(contactMapper.mapToContactEntity(contactRequest, c));
             return ResponseEntity.ok(new ResponseStructure<List<Contact>>()
                     .setStatus(HttpStatus.OK.value())
                     .setMessage("Successfully updated contact")

@@ -33,6 +33,9 @@ class VariantServiceImplTest {
     @Mock
     private ProductRepo productRepo;
 
+    @Mock
+    private VariantMapper variantMapper;
+
     @InjectMocks
     private VariantServiceImpl variantServiceImpl;
 
@@ -56,13 +59,15 @@ class VariantServiceImplTest {
         variantRequests.add(variantRequest);
 
         Variant variant = new Variant();
-        Set<Variant> variantSet = new HashSet<>(Collections.singletonList(variant));
+        Set<Variant> variants = new HashSet<>(Collections.singletonList(variant));
+        varyingProduct.setVariants(variants);
+
         List<VariantResponse> variantResponses = new ArrayList<>(Collections.singletonList(new VariantResponse()));
 
         when(productRepo.findById(productId)).thenReturn(Optional.of(varyingProduct));
         when(variantRepo.save(any(Variant.class))).thenReturn(variant);
-        when(VariantMapper.mapToVariantEntity(any(VariantRequest.class))).thenReturn(variant);
-        when(VariantMapper.mapToVariantResponseList(anySet())).thenReturn(variantResponses);
+        when(variantMapper.mapToVariantEntity(any(VariantRequest.class))).thenReturn(variant);
+        when(variantMapper.mapToVariantResponseList(anySet())).thenReturn(variantResponses);
 
         // Act
         ResponseEntity<ResponseStructure<List<VariantResponse>>> response = variantServiceImpl.updateVariants(variantRequests, productId);

@@ -3,16 +3,16 @@ package com.devb.estores.mapper;
 import com.devb.estores.model.Address;
 import com.devb.estores.requestdto.AddressRequest;
 import com.devb.estores.responsedto.AddressResponse;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
+@AllArgsConstructor
 public class AddressMapper {
 
-    private AddressMapper() {
-        /*
-         * Created private constructor to avoid Instantiation of class
-         * */
-    }
+    private ContactMapper contactMapper;
 
-    public static AddressResponse mapToAddressResponse(Address address) {
+    public AddressResponse mapToAddressResponse(Address address) {
         return address != null ?
                 AddressResponse.builder()
                         .addressLine1(address.getAddressLine1())
@@ -24,13 +24,13 @@ public class AddressMapper {
                         .country(address.getCountry())
                         .pincode(address.getPincode())
                         .contacts(address.getContacts().stream()
-                                .map(ContactMapper::mapToContactResponse)
+                                .map(contactMapper::mapToContactResponse)
                                 .toList())
                         .build()
                 : null;
     }
 
-    public static Address mapToAddressEntity(AddressRequest addressRequest, Address address) {
+    public Address mapToAddressEntity(AddressRequest addressRequest, Address address) {
         address.setAddressLine1(addressRequest.getAddressLine1());
         address.setAddressLine2(addressRequest.getAddressLine2());
         address.setAreaVillage(addressRequest.getAreaVillage());
