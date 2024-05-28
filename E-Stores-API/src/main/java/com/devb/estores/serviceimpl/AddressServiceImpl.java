@@ -21,11 +21,12 @@ public class AddressServiceImpl implements AddressService {
 
     private final AddressRepo addressRepo;
     private final StoreRepo storeRepo;
+    private AddressMapper addressMapper;
 
     @Override
     public ResponseEntity<ResponseStructure<AddressResponse>> addAddressToStore(AddressRequest addressRequest, String storeId) {
         return storeRepo.findById(storeId).map(store -> {
-            Address address = AddressMapper.mapToAddressEntity(addressRequest, new Address());
+            Address address = addressMapper.mapToAddressEntity(addressRequest, new Address());
             address.setContacts(new ArrayList<>());
             address = addressRepo.save(address);
             store.setAddress(address);
@@ -35,18 +36,18 @@ public class AddressServiceImpl implements AddressService {
                     .status(HttpStatus.CREATED)
                     .body(new ResponseStructure<AddressResponse>().setStatus(HttpStatus.CREATED.value())
                             .setMessage("Address saved successfully")
-                            .setData(AddressMapper.mapToAddressResponse(address)));
+                            .setData(addressMapper.mapToAddressResponse(address)));
         }).orElseThrow();
     }
 
     @Override
     public ResponseEntity<ResponseStructure<AddressResponse>> updateAddress(AddressRequest addressRequest, String addressId) {
         return addressRepo.findById(addressId).map(address -> {
-            address = addressRepo.save(AddressMapper.mapToAddressEntity(addressRequest, address));
+            address = addressRepo.save(addressMapper.mapToAddressEntity(addressRequest, address));
             return ResponseEntity.ok(new ResponseStructure<AddressResponse>()
                     .setStatus(HttpStatus.OK.value())
                     .setMessage("successfully updated address")
-                    .setData(AddressMapper.mapToAddressResponse(address)));
+                    .setData(addressMapper.mapToAddressResponse(address)));
         }).orElseThrow();
     }
 
@@ -57,7 +58,7 @@ public class AddressServiceImpl implements AddressService {
                 .body(new ResponseStructure<AddressResponse>()
                         .setStatus(HttpStatus.FOUND.value())
                         .setMessage("Address found")
-                        .setData(AddressMapper.mapToAddressResponse(address)))).orElseThrow();
+                        .setData(addressMapper.mapToAddressResponse(address)))).orElseThrow();
     }
 
     @Override
@@ -67,7 +68,7 @@ public class AddressServiceImpl implements AddressService {
                 .body(new ResponseStructure<AddressResponse>()
                         .setStatus(HttpStatus.FOUND.value())
                         .setMessage("Address found")
-                        .setData(AddressMapper.mapToAddressResponse(address)))).orElseThrow();
+                        .setData(addressMapper.mapToAddressResponse(address)))).orElseThrow();
     }
 
 

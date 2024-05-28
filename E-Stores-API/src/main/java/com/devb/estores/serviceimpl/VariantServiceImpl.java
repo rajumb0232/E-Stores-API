@@ -27,6 +27,7 @@ public class VariantServiceImpl implements VariantService {
 
     private VariantRepo variantRepo;
     private ProductRepo productRepo;
+    private VariantMapper variantMapper;
 
     @Override
     public ResponseEntity<ResponseStructure<List<VariantResponse>>> updateVariants(List<VariantRequest> variantRequest, String productId) {
@@ -48,7 +49,7 @@ public class VariantServiceImpl implements VariantService {
                  * Saving the variants to the database by iterating on each
                  * */
                 Set<Variant> variants = variantRequest.stream()
-                        .map(VariantMapper::mapToVariantEntity)
+                        .map(variantMapper::mapToVariantEntity)
                         .map(variant -> variantRepo.save(variant))
                         .collect(Collectors.toSet());
 
@@ -56,7 +57,7 @@ public class VariantServiceImpl implements VariantService {
                 productRepo.save(varyingProduct);
 
                 return ResponseEntity.ok(new ResponseStructure<List<VariantResponse>>()
-                        .setData(VariantMapper.mapToVariantResponseList(variants))
+                        .setData(variantMapper.mapToVariantResponseList(variants))
                         .setMessage("Variants added successfully")
                         .setStatus(HttpStatus.OK.value()));
             } else throw new InvalidOperationException("The product is simple product, not a varying product");

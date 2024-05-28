@@ -31,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductTypeRepo typeRepo;
     private final ProductRepo productRepo;
     private SpecSuggestService specSuggestService;
+    private ProductMapper productMapper;
 
     @Override
     public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest, String storeId) {
@@ -49,7 +50,7 @@ public class ProductServiceImpl implements ProductService {
                                     productRequest.getSubCategory(),
                                     store.getTopCategory())
                             .map(type -> {
-                                Product product = ProductMapper.mapToNewProductEntity(productRequest);
+                                Product product = productMapper.mapToNewProductEntity(productRequest);
                                 /*
                                  * The Product Specification and Variant Specification should not be the same,
                                  * the specifications in variants are removed from the product specifications list.
@@ -66,7 +67,7 @@ public class ProductServiceImpl implements ProductService {
                                 return ResponseEntity.ok(new ResponseStructure<ProductResponse>()
                                         .setStatus(HttpStatus.OK.value())
                                         .setMessage("Product saved successfully")
-                                        .setData(ProductMapper.mapToProductPageResponse(product, type, store)));
+                                        .setData(productMapper.mapToProductPageResponse(product, type, store)));
                             }).orElseThrow(() -> new ProductTypeNotFoundException("Failed to add Product"));
                 }
         ).orElseThrow(() -> new StoreNotFoundException("Failed to add Product"));
@@ -111,7 +112,7 @@ public class ProductServiceImpl implements ProductService {
             return ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<ProductResponse>()
                     .setStatus(HttpStatus.FOUND.value())
                     .setMessage("Product saved successfully")
-                    .setData(ProductMapper.mapToProductPageResponse(product, type, store)));
+                    .setData(productMapper.mapToProductPageResponse(product, type, store)));
         }).orElseThrow();
     }
 
@@ -121,7 +122,7 @@ public class ProductServiceImpl implements ProductService {
                 .stream().map(product -> {
                     ProductType type = typeRepo.findById(product.getProductTypeId()).orElseThrow();
                     Store store = storeRepo.findById(product.getStoreId()).orElseThrow();
-                    return ProductMapper.mapToProductPageResponse(product, type, store);
+                    return productMapper.mapToProductPageResponse(product, type, store);
                 }).toList();
 
         return ResponseEntity.ok(new ResponseStructure<List<ProductResponse>>()
