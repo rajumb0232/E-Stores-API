@@ -1,0 +1,46 @@
+spring:
+  # In-memory H2 Configuration for testing
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop  # Use create-drop for tests to start with a clean state
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+
+  # MongoDB Configuration for testing (if needed)
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: test_flipkartdb  # Use a different test database name
+
+logging:
+  level:
+    root: DEBUG
+
+# Server Configuration
+server:
+  port: 7001  # Different port for testing if needed
+
+app:
+  base_url: /api/fkv1
+
+# JWT secret for testing
+myapp:
+  jwt:
+    secret: testsecret
+
+token:
+  expiry:
+    access:
+      seconds: 3600
+    refresh:
+      seconds: 1296000

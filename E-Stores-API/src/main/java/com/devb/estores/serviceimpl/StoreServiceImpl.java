@@ -23,6 +23,7 @@ public class StoreServiceImpl implements StoreService {
 
     private final UserRepo userRepo;
     private final StoreRepo storeRepo;
+    private StoreMapper storeMapper;
 
     @Override
     public ResponseEntity<ResponseStructure<StoreResponse>> setUpStore(StoreRequest storeRequest) {
@@ -31,13 +32,13 @@ public class StoreServiceImpl implements StoreService {
 
         return userRepo.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName())
                 .map(user -> {
-                    Store store = StoreMapper.mapToStoreEntity(storeRequest, new Store());
+                    Store store = storeMapper.mapToStoreEntity(storeRequest, new Store());
                     store.setUser(user);
                     store = storeRepo.save(store);
                     return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseStructure<StoreResponse>()
                             .setStatus(HttpStatus.CREATED.value())
                             .setMessage("Store Created Successfully")
-                            .setData(StoreMapper.mapToStorePageResponse(store)));
+                            .setData(storeMapper.mapToStorePageResponse(store)));
                 }).orElseThrow();
     }
 
@@ -45,14 +46,14 @@ public class StoreServiceImpl implements StoreService {
     public ResponseEntity<ResponseStructure<StoreResponse>> updateStore(StoreRequest storeRequest, String storeId) {
         return storeRepo.findById(storeId).map(exStore -> {
 
-            Store store = StoreMapper.mapToStoreEntity(storeRequest, exStore);
+            Store store = storeMapper.mapToStoreEntity(storeRequest, exStore);
             store.setTopCategory(exStore.getTopCategory());
             store = storeRepo.save(store);
 
             return ResponseEntity.ok(new ResponseStructure<StoreResponse>()
                     .setStatus(HttpStatus.OK.value())
                     .setMessage("Store Created Successfully")
-                    .setData(StoreMapper.mapToStorePageResponse(store)));
+                    .setData(storeMapper.mapToStorePageResponse(store)));
         }).orElseThrow();
     }
 
@@ -62,7 +63,7 @@ public class StoreServiceImpl implements StoreService {
                 .map(store -> ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<StoreResponse>()
                         .setStatus(HttpStatus.FOUND.value())
                         .setMessage("Store data found")
-                        .setData(StoreMapper.mapToStorePageResponse(store))))
+                        .setData(storeMapper.mapToStorePageResponse(store))))
                 .orElseThrow(() -> new StoreNotFoundException("Failed to find the store data"));
     }
 
@@ -81,7 +82,7 @@ public class StoreServiceImpl implements StoreService {
                         .body(new ResponseStructure<StoreResponse>()
                                 .setStatus(HttpStatus.FOUND.value())
                                 .setMessage("Store found")
-                                .setData(StoreMapper.mapToStorePageResponse(store))
+                                .setData(storeMapper.mapToStorePageResponse(store))
                         )).orElseThrow(() -> new StoreNotFoundException("failed to find store"))
                 ).orElseThrow(() -> new UsernameNotFoundException("failed to find store"));
     }
