@@ -147,8 +147,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, String refreshToken, String accessToken) {
-        // validate if the user is already logged in
-        if (accessToken != null && refreshToken != null) throw new UserAlreadyLoggedInException("Failed to login");
         // getting username
         String username = authRequest.getEmail().split("@")[0];
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
