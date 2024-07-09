@@ -9,7 +9,7 @@ import java.time.Duration;
 @Slf4j
 public class CacheStore<T> {
 
-    private Cache<String, T> cache;
+    private final Cache<String, T> cache;
 
     public CacheStore(Duration expiry) {
         this.cache = CacheBuilder.newBuilder()

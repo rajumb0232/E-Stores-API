@@ -53,22 +53,23 @@ class VariantServiceImplTest {
         // Arrange
         String productId = "123";
 
+        Variant variant = new Variant();
+        Set<Variant> variants = new HashSet<>();
+        variants.add(variant);
+
         VaryingProduct varyingProduct = new VaryingProduct();
         varyingProduct.setProductId("123");
-        varyingProduct.setVariantBy(new HashSet<>(Arrays.asList("size", "color")));
+        varyingProduct.setVariantBy(Set.of("size", "color"));
+        varyingProduct.setVariants(variants);
 
         List<VariantRequest> variantRequests = new ArrayList<>();
         VariantRequest variantRequest = new VariantRequest();
         variantRequest.setSpecifications(Map.of("size", "M", "color", "red"));
         variantRequests.add(variantRequest);
 
-        Variant variant = new Variant();
-        Set<Variant> variants = new HashSet<>(Collections.singletonList(variant));
-        varyingProduct.setVariants(variants);
-
         List<VariantResponse> variantResponses = new ArrayList<>(Collections.singletonList(new VariantResponse()));
 
-        when(productRepo.findById(productId)).thenReturn(Optional.of(varyingProduct));
+        when(productRepo.findById(anyString())).thenReturn(Optional.of(varyingProduct));
         when(variantRepo.save(any(Variant.class))).thenReturn(variant);
         when(variantMapper.mapToVariantEntity(any(VariantRequest.class))).thenReturn(variant);
         when(variantMapper.mapToVariantResponseList(anySet())).thenReturn(variantResponses);
