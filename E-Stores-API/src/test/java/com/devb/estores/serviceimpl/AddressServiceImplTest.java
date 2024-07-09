@@ -8,12 +8,10 @@ import com.devb.estores.repository.StoreRepo;
 import com.devb.estores.requestdto.AddressRequest;
 import com.devb.estores.responsedto.AddressResponse;
 import com.devb.estores.util.ResponseStructure;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -21,28 +19,24 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @ActiveProfiles("test")
 class AddressServiceImplTest {
 
-    @Mock
+    @MockBean
     private AddressRepo addressRepo;
 
-    @Mock
+    @MockBean
     private StoreRepo storeRepo;
 
-    @Mock
+    @MockBean
     private AddressMapper addressMapper;
 
-    @InjectMocks
+    @Autowired
     private AddressServiceImpl addressServiceImpl;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     void addAddressToStore() {
@@ -62,7 +56,7 @@ class AddressServiceImplTest {
 
         // Mock repository and mapper behavior
         when(storeRepo.findById(storeId)).thenReturn(Optional.of(store));
-        when(addressMapper.mapToAddressEntity(addressRequest, address)).thenReturn(address);
+        when(addressMapper.mapToAddressEntity(any(AddressRequest.class), any(Address.class))).thenReturn(address);
         when(addressRepo.save(address)).thenReturn(address);
         when(addressMapper.mapToAddressResponse(address)).thenReturn(addressResponse);
 
