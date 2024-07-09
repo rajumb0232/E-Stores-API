@@ -1,12 +1,12 @@
 package com.devb.estores.requestdto;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @Setter
-@ToString
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ContactRequest {
     private String contactName;
     private long contactNumber;
