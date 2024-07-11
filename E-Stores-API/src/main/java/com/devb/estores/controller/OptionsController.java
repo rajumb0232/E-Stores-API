@@ -74,6 +74,6 @@ public class OptionsController {
     public ResponseEntity<List<String>> getDistrictsByState(@PathVariable String stateName) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)))
-                .body(State.valueOf(stateName).getDistricts());
+                .body(State.valueOf(stateName.toUpperCase()).getDistricts());
     }
 }
