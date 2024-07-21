@@ -3,9 +3,15 @@ package com.devb.estores.controller;
 import com.devb.estores.requestdto.SimpleProductRequest;
 import com.devb.estores.requestdto.VaryingProductRequest;
 import com.devb.estores.responsedto.ProductResponse;
+import com.devb.estores.responsedto.SimpleProductResponse;
+import com.devb.estores.responsedto.VaryingProductResponse;
 import com.devb.estores.service.ProductService;
 import com.devb.estores.util.ResponseStructure;
 import com.devb.estores.util.SimpleResponseStructure;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,12 +25,26 @@ public class ProductController {
 
     private ProductService productService;
 
+    @Operation(
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Simple Product Added.", content = {
+                            @Content(schema = @Schema(implementation = SimpleProductResponse.class))
+                    })
+            }
+    )
     @PostMapping("/stores/{storeId}/simple-products")
     public ResponseEntity<ResponseStructure<ProductResponse>> addSimpleProduct(@RequestBody SimpleProductRequest productRequest,
                                                                                @PathVariable String storeId){
         return productService.addProduct(productRequest, storeId);
     }
 
+    @Operation(
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Varying Product Added.", content = {
+                            @Content(schema = @Schema(implementation = VaryingProductResponse.class))
+                    })
+            }
+    )
     @PostMapping("/stores/{storeId}/varying-products")
     public ResponseEntity<ResponseStructure<ProductResponse>> addVaryingProduct(@RequestBody VaryingProductRequest productRequest,
                                                                          @PathVariable String storeId){
