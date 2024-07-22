@@ -39,7 +39,7 @@ server:
   port: 7000
 
 app:
-  base_url: /api/fkv1
+  base_url: ${base.url}
 
 # JWT secret
 myapp:
