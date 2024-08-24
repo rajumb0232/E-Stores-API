@@ -57,7 +57,7 @@ public class OptionsController {
         ).toList();
 
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(Duration.ofDays(15)))
+//                .cacheControl(CacheControl.maxAge(Duration.ofDays(15)))
                 .body(response);
     }
 
