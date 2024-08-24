@@ -1,9 +1,9 @@
 spring:
 #  Postgres Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/flipkartdb
-    username: postgres
-    password: root
+    url: ${postgre.url}
+    username: ${postgre.username}
+    password: ${postgre.pwd}
   jpa:
     open-in-view: false
     show-sql: true
