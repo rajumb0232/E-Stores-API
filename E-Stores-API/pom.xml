@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.2</version>
+        <version>3.3.3</version>
         <relativePath/>
     </parent>
     <groupId>com.devb</groupId>
@@ -15,12 +15,8 @@
     <description>RESTful API for E-Stores shopping application</description>
     <properties>
         <java.version>21</java.version>
-        <sonar.organization>devb</sonar.organization>
+        <sonar.organization>rajumb0232</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/target/site/
-            jacoco-aggregate/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
     </properties>
     <dependencies>
         <!-- DATA DEPENDENCIES -->
