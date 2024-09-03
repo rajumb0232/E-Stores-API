@@ -1,9 +1,9 @@
 spring:
 #  Postgres Configuration
   datasource:
-    url: ${postgre.url}
-    username: ${postgre.username}
-    password: ${postgre.pwd}
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     open-in-view: false
     show-sql: true
@@ -25,8 +25,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${mail.username}
-    password: ${mail.pwd}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -39,12 +39,12 @@ server:
   port: 7000
 
 app:
-  base_url: ${base.url}
+  base_url: /api/fkv1
 
 # JWT secret
 myapp:
   jwt:
-    secret: ${jwt.secret}
+    secret: ${JWT_SECRET}
 
 token:
   expiry:
