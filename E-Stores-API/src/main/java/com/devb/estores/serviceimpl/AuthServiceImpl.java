@@ -362,19 +362,39 @@ public class AuthServiceImpl implements AuthService {
 }
 
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
+        String text =
+                "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                "    <title>Mail</title>\n" +
+                "</head>\n" +
+                "<style>\n" +
+                "    *{\n" +
+                "        font-family: Verdana, Geneva, Tahoma, sans-serif\n" +
+                "    }\n" +
+                "    h4 {\n" +
+                "        color: rgb(0, 98, 255);\n" +
+                "    }\n" +
+                "</style>\n" +
+                "<body>\n" +
+                "    <div>\n" +
+                "        <h3>Hurrey!!! You are just few steps away!</h3>\n" +
+                "        <p>Please use this OTP given below for further verification.</p>\n" +
+                "        <h4>" + otp + "</h4>\n" +
+                "        <br> <br> <br>\n" +
+                "        <p>with best regards</p>\n" +
+                "        <p>E Stores</p>\n" +
+                "    </div>\n" +
+                "</body>\n" +
+                "</html>";
+
         mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
-                .subject("Verify your email for flipkart")
+                .subject("Verify your email for E Stores")
                 .sentDate(new Date())
-                .text(
-                        "Hi " + user.getEmail().split("@")[0] + ",<br>"
-                                + "<h4> Nice to see you interested in Flipkart, your OTP for email verification is,</h4><br><br>"
-                                + "<h3 style=\"color: #1D63FF; font-size: 1rem; font-weight: 600; text-decoration: none; padding: 0.5em 1em;"
-                                + "border-radius: 10px; width: max-content;\">" + otp + "</h3>" // add the OTP ID (UUID)
-                                + "<br><br>"
-                                + "With Best Regards,<br>"
-                                + "Flipkart"
-                ).build());
+                .text(text).build());
     }
 
     private void sendConfirmationMail(User user) throws MessagingException {

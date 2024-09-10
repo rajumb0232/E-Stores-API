@@ -23,7 +23,7 @@ public class StoreExceptionHandlers {
 
     @ExceptionHandler(StoreNotFoundException.class)
     public ResponseEntity<ErrorStructure<String>> handleStoreNotFoundById(StoreNotFoundException ex){
-        return errorResponse.structure(HttpStatus.BAD_REQUEST, ex.getMessage(), "No store found");
+        return errorResponse.structure(HttpStatus.NOT_FOUND, ex.getMessage(), "No store found");
     }
 
     @ExceptionHandler(InvalidPrimeCategoryException.class)
