@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a seller-centric backend REST API for an e-commerce platform. It enables sellers to create and manage their own online stores, allowing customers to browse and place orders directly from the stores they prefer. The platform is designed with a focus on empowering individual sellers, offering them tools to manage products, orders, and customer interactions efficiently.
+This project is a backend REST API for an e-commerce platform. It enables sellers to create and manage their own online stores, allowing customers to browse and place orders directly from the stores they prefer. The platform is designed with a focus on empowering individual sellers, offering them tools to manage products, orders, and customer interactions efficiently.
 
 ## Table of Contents
 
