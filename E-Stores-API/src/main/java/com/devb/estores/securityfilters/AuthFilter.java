@@ -47,8 +47,8 @@ public class AuthFilter extends OncePerRequestFilter {
         } catch (JwtException ex) {
             FilterHelper.handleException(response, "Authentication Failed | " + ex.getMessage());
         } catch (UserNotLoggedInException ex) {
-            log.info("Authentication failed | User already logged in");
-            FilterHelper.handleException(response, "User already logged in | send a refresh request or try again after clearing cookies");
+            log.info("Authentication failed | User not logged in");
+            FilterHelper.handleException(response, "User not logged in | send a refresh request or try again after clearing cookies");
         }
 
     }
