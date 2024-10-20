@@ -2,6 +2,7 @@ package com.devb.estores.controller;
 
 import com.devb.estores.service.ImageService;
 import com.devb.estores.util.ResponseStructure;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public class ImageController {
     private ImageService imageService;
 
     @PostMapping("/stores/{storeId}/images")
-    public ResponseEntity<ResponseStructure<String>> addStoreImage(@PathVariable String storeId, MultipartFile image){
+    public ResponseEntity<ResponseStructure<String>> addStoreImage(@PathVariable String storeId, @NotNull MultipartFile image){
         return imageService.addStoreImage(storeId, image);
     }
 

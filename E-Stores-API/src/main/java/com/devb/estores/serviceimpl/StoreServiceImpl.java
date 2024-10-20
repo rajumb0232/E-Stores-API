@@ -56,7 +56,7 @@ public class StoreServiceImpl implements StoreService {
 
             return ResponseEntity.ok(new ResponseStructure<StoreResponse>()
                     .setStatus(HttpStatus.OK.value())
-                    .setMessage("Store Created Successfully")
+                    .setMessage("Store updated Successfully")
                     .setData(storeMapper.mapToStorePageResponse(store)));
         }).orElseThrow();
     }

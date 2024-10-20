@@ -21,6 +21,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -46,7 +49,7 @@ public class SecurityConfig {
     SecurityFilterChain publicFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .cors(cors -> cors.configurationSource(corsSource))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .securityMatchers(matcher -> matcher.requestMatchers(HttpMethod.GET,
                         "/api/fkv1/top-categories/**",
                         "/api/fkv1/categories/**",
@@ -59,11 +62,11 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain registrationFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
+    SecurityFilterChain csrfTokenFilterChain(HttpSecurity http) throws Exception {
+        return http
                 .cors(cors -> cors.configurationSource(corsSource))
-                .csrf(AbstractHttpConfigurer::disable)
-                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/sellers/register/**", "/api/fkv1/customers/register/**", "/api/fkv1/verify-email/**"))
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/csrf/**"))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
@@ -71,10 +74,22 @@ public class SecurityConfig {
 
     @Bean
     @Order(3)
+    SecurityFilterChain registrationFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
+                .cors(cors -> cors.configurationSource(corsSource))
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/sellers/register/**", "/api/fkv1/customers/register/**", "/api/fkv1/verify-email/**"))
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .build();
+    }
+
+    @Bean
+    @Order(4)
     SecurityFilterChain loginSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .cors(cors -> cors.configurationSource(corsSource))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/login/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -83,11 +98,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(4)
+    @Order(5)
     SecurityFilterChain refreshTokenFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .cors(cors -> cors.configurationSource(corsSource))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/refresh/**"))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -96,11 +111,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(5)
+    @Order(6)
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .cors(cors -> cors.configurationSource(corsSource))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

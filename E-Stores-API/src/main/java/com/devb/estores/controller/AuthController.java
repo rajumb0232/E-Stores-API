@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -22,6 +23,11 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class AuthController extends ResponseEntityExceptionHandler {
 
     private AuthService authService;
+
+    @GetMapping("/csrf")
+    public CsrfToken getCsrfToken(CsrfToken token){
+        return token;
+    }
 
     @PostMapping("/sellers/register")
     public ResponseEntity<ResponseStructure<UserResponse>> registerSeller(@RequestBody @Valid UserRequest userRequest) {
