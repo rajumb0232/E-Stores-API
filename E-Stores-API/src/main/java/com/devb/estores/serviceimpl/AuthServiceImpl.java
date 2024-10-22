@@ -89,8 +89,9 @@ public class AuthServiceImpl implements AuthService {
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
+
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
+    public UserResponse registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
@@ -108,19 +109,14 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             sendOTPToMailId(user, otp.getOtp());
-            return ResponseEntity
-                    .status(HttpStatus.ACCEPTED)
-                    .body(new ResponseStructure<UserResponse>()
-                            .setStatus(HttpStatus.ACCEPTED.value())
-                            .setMessage("user registration successful. Please check your email for OTP")
-                            .setData(mapToUserResponse(user)));
+            return mapToUserResponse(user);
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to verify the email ID");
         }
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> verifyUserEmail(OtpModel otpModel) {
+    public UserResponse verifyUserEmail(OtpModel otpModel) {
         OtpModel otp = otpCache.get(otpModel.getEmail());
         User user = userCacheStore.get(otpModel.getEmail());
 
@@ -134,19 +130,14 @@ public class AuthServiceImpl implements AuthService {
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(new ResponseStructure<UserResponse>()
-                            .setStatus(HttpStatus.OK.value())
-                            .setMessage("User registration successful")
-                            .setData(mapToUserResponse(user)));
+            return mapToUserResponse(user);
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to send confirmation mail");
         }
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, String refreshToken, String accessToken) {
+    public AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken) {
         // getting username
         String username = authRequest.getEmail().split("@")[0];
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
@@ -156,23 +147,20 @@ public class AuthServiceImpl implements AuthService {
             HttpHeaders headers = new HttpHeaders();
             generateAccessToken(user, headers);
             generateRefreshToken(user, headers);
-            return ResponseEntity.ok().headers(headers).body(new ResponseStructure<AuthResponse>()
-                    .setStatus(HttpStatus.OK.value())
-                    .setMessage("Login refreshed successfully")
-                    .setData(AuthResponse.builder()
+            return AuthResponse.builder()
                             .userId(user.getUserId())
                             .username(user.getUsername())
                             .roles(user.getRoles().stream().map(UserRole::name).toList())
                             .isAuthenticated(true)
                             .accessExpiration(accessTokenExpirySeconds)
                             .refreshExpiration(refreshTokenExpirySeconds)
-                            .build()));
+                            .build();
         }).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
         else throw new BadCredentialsException("The given credentials are incorrect");
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken) {
+    public AuthResponse refreshLogin(String refreshToken, String accessToken) {
         if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
         String username = jwtService.extractUsername(refreshToken);
@@ -212,21 +200,18 @@ public class AuthServiceImpl implements AuthService {
             this.generateRefreshToken(user, headers);
         }
 
-        return ResponseEntity.ok().headers(headers).body(new ResponseStructure<AuthResponse>()
-                .setStatus(HttpStatus.OK.value())
-                .setMessage("Login refreshed successfully")
-                .setData(AuthResponse.builder()
+        return AuthResponse.builder()
                         .userId(user.getUserId())
                         .username(user.getUsername())
                         .roles(user.getRoles().stream().map(UserRole::name).toList())
                         .isAuthenticated(true)
                         .accessExpiration(evaluatedAccessExpiration)
                         .refreshExpiration(evaluatedRefreshExpiration)
-                        .build()));
+                        .build();
     }
 
     @Override
-    public ResponseEntity<SimpleResponseStructure> logout(String refreshToken, String accessToken) {
+    public boolean logout(String refreshToken, String accessToken) {
 
         // resetting tokens with blank value and 0 maxAge
         HttpHeaders headers = new HttpHeaders();
@@ -236,12 +221,11 @@ public class AuthServiceImpl implements AuthService {
         blockAccessToken(accessToken);
         blockRefreshToken(refreshToken);
 
-        return ResponseEntity.ok().headers(headers).body(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
-                .setMessage("Logout Successful"));
+        return true;
     }
 
     @Override
-    public ResponseEntity<SimpleResponseStructure> revokeAllOtherTokens(String refreshToken, String accessToken) {
+    public boolean revokeAllOtherTokens(String refreshToken, String accessToken) {
         if (refreshToken == null || accessToken == null)
             throw new UserNotLoggedInException("Failed to revoke access from all other devices");
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -260,14 +244,13 @@ public class AuthServiceImpl implements AuthService {
                         refreshTokenRepo.save(rt);
                     });
 
-            return ResponseEntity.ok(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
-                    .setMessage("Successfully revoked access from all other devices"));
+            return true;
 
         }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
     }
 
     @Override
-    public ResponseEntity<SimpleResponseStructure> revokeAllTokens() {
+    public boolean revokeAllTokens() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         return userRepo.findByUsername(username).map(user -> {
@@ -289,8 +272,7 @@ public class AuthServiceImpl implements AuthService {
             headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
             headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
 
-            return ResponseEntity.ok().headers(headers).body(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
-                    .setMessage("Successfully revoked access from all devices"));
+            return true;
 
         }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
     }

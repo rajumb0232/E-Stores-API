@@ -11,17 +11,17 @@ import com.devb.estores.responsedto.UserResponse;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
-    ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role);
+    UserResponse registerUser(UserRequest userRequest, UserRole role);
 
-    ResponseEntity<ResponseStructure<UserResponse>> verifyUserEmail(OtpModel otpModel);
+    UserResponse verifyUserEmail(OtpModel otpModel);
 
-    ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, String refreshToken, String accessToken);
+    AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken);
 
-    ResponseEntity<SimpleResponseStructure> logout(String refreshToken, String accessToken);
+    boolean logout(String refreshToken, String accessToken);
 
-    ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken);
+    AuthResponse refreshLogin(String refreshToken, String accessToken);
 
-    ResponseEntity<SimpleResponseStructure> revokeAllOtherTokens(String refreshToken, String accessToken);
+    boolean revokeAllOtherTokens(String refreshToken, String accessToken);
 
-    ResponseEntity<SimpleResponseStructure> revokeAllTokens();
+    boolean revokeAllTokens();
 }
