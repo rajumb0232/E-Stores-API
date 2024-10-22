@@ -27,11 +27,12 @@ public class AuthFilter extends OncePerRequestFilter {
         log.info("Authenticating Token with JWT Filter...");
         String accessToken = FilterHelper.extractCookie("at", request.getCookies());
 
-        if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
-        if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
-            throw new UserNotLoggedInException("Failed to authenticate the user");
 
         try {
+            if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
+            if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
+                throw new UserNotLoggedInException("Failed to authenticate the user");
+
             log.info("Extracting credentials...");
 
             String username = jwtService.extractUsername(accessToken);
@@ -40,15 +41,15 @@ public class AuthFilter extends OncePerRequestFilter {
             FilterHelper.setAuthentication(username, roles, request);
             log.info("Authentication Successful");
 
+            filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
             FilterHelper.handleException(response, "Your AccessToken is expired, refresh your login");
         } catch (JwtException ex) {
             FilterHelper.handleException(response, "Authentication Failed | " + ex.getMessage());
         } catch (UserNotLoggedInException ex) {
-            log.info("Authentication failed | User already logged in");
-            FilterHelper.handleException(response, "User already logged in | send a refresh request or try again after clearing cookies");
+            log.info("Authentication failed | User not logged in");
+            FilterHelper.handleException(response, "User not logged in | send a refresh request or try again after clearing cookies");
         }
 
-        filterChain.doFilter(request, response);
     }
 }

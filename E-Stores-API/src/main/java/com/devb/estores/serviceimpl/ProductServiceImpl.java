@@ -111,7 +111,7 @@ public class ProductServiceImpl implements ProductService {
 
             return ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<ProductResponse>()
                     .setStatus(HttpStatus.FOUND.value())
-                    .setMessage("Product saved successfully")
+                    .setMessage("Products found")
                     .setData(productMapper.mapToProductPageResponse(product, type, store)));
         }).orElseThrow();
     }

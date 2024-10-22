@@ -11,12 +11,14 @@ import com.devb.estores.responsedto.StoreResponse;
 import com.devb.estores.service.StoreService;
 import com.devb.estores.util.ResponseStructure;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class StoreServiceImpl implements StoreService {
@@ -27,11 +29,13 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public ResponseEntity<ResponseStructure<StoreResponse>> setUpStore(StoreRequest storeRequest) {
+        log.info("create store requested, validating storeRequest");
         if (storeRequest.getCategory() == null)
             throw new InvalidPrimeCategoryException("Failed to update the store data");
-
+        log.info("prime Category is valid.");
         return userRepo.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName())
                 .map(user -> {
+                    log.info("User found from database.");
                     Store store = storeMapper.mapToStoreEntity(storeRequest, new Store());
                     store.setUser(user);
                     store = storeRepo.save(store);
@@ -52,7 +56,7 @@ public class StoreServiceImpl implements StoreService {
 
             return ResponseEntity.ok(new ResponseStructure<StoreResponse>()
                     .setStatus(HttpStatus.OK.value())
-                    .setMessage("Store Created Successfully")
+                    .setMessage("Store updated Successfully")
                     .setData(storeMapper.mapToStorePageResponse(store)));
         }).orElseThrow();
     }
