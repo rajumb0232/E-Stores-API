@@ -1,8 +1,10 @@
 package com.devb.estores.util;
 
+import lombok.Builder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Builder
 public class ResponseStructure<T> {
     private int status;
     private String message;
@@ -33,39 +35,6 @@ public class ResponseStructure<T> {
     public ResponseStructure<T> setData(T data) {
         this.data = data;
         return this;
-    }
-
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
-    }
-
-    public static class Builder<T> {
-        private int status;
-        private String message;
-        private T data;
-
-        public Builder<T> status(int status) {
-            this.status = status;
-            return this;
-        }
-
-        public Builder<T> message(String message) {
-            this.message = message;
-            return this;
-        }
-
-        public Builder<T> data(T data) {
-            this.data = data;
-            return this;
-        }
-
-        public ResponseStructure<T> build() {
-            ResponseStructure<T> structure = new ResponseStructure<>();
-            structure.status = this.status;
-            structure.message = this.message;
-            structure.data = this.data;
-            return structure;
-        }
     }
 
 }
