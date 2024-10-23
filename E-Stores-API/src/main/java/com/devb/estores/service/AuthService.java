@@ -8,20 +8,25 @@ import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
-    UserResponse registerUser(UserRequest userRequest, UserRole role);
+    String registerUser(UserRequest userRequest, UserRole role);
 
     UserResponse verifyUserEmail(OtpModel otpModel);
 
     AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken);
 
-    boolean logout(String refreshToken, String accessToken);
+    HttpHeaders grantLoginAccess(AuthResponse authResponse);
+
+    void logout(String refreshToken, String accessToken);
+
+    HttpHeaders invalidateTokens();
 
     AuthResponse refreshLogin(String refreshToken, String accessToken);
 
-    boolean revokeAllOtherTokens(String refreshToken, String accessToken);
+    void revokeAllOtherTokens(String refreshToken, String accessToken);
 
-    boolean revokeAllTokens();
+    void revokeAllTokens();
 }

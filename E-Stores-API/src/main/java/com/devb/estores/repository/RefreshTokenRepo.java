@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface RefreshTokenRepo extends JpaRepository<RefreshToken, String> {
@@ -18,4 +19,6 @@ public interface RefreshTokenRepo extends JpaRepository<RefreshToken, String> {
     List<RefreshToken> findAllByExpirationBefore(LocalDateTime now);
 
     boolean existsByTokenAndIsBlocked(String token, boolean isBlocked);
+
+    List<RefreshToken> findALLByUserAndIsBlockedAndTokenNot(User user, boolean isBlocked, String token);
 }

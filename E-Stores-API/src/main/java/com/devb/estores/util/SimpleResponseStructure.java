@@ -1,8 +1,10 @@
 package com.devb.estores.util;
 
+import lombok.Builder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Builder
 public class SimpleResponseStructure {
     private int status;
     private String message;

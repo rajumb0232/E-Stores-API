@@ -21,6 +21,7 @@ import com.devb.estores.util.CookieManager;
 import com.devb.estores.util.ResponseStructure;
 import com.devb.estores.util.SimpleResponseStructure;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -91,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
 
     @Override
-    public UserResponse registerUser(UserRequest userRequest, UserRole role) {
+    public String registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
@@ -109,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             sendOTPToMailId(user, otp.getOtp());
-            return mapToUserResponse(user);
+            return "Verify Email using the OTP sent to " + user.getEmail();
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to verify the email ID");
         }
@@ -138,25 +139,46 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken) {
-        // getting username
-        String username = authRequest.getEmail().split("@")[0];
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
+        // Authenticating user
+        User user = this.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
+
+        return this.generateAuthResponse(user, accessTokenExpirySeconds, refreshTokenExpirySeconds);
+    }
+
+    private User authenticateUser(String email, String password) {
+        String username = email.split("@")[0];
+        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
         // validating if the user authentication is authenticated
-        if (auth.isAuthenticated()) return userRepo.findByUsername(username).map(user -> {
-            HttpHeaders headers = new HttpHeaders();
-            generateAccessToken(user, headers);
-            generateRefreshToken(user, headers);
-            return AuthResponse.builder()
-                            .userId(user.getUserId())
-                            .username(user.getUsername())
-                            .roles(user.getRoles().stream().map(UserRole::name).toList())
-                            .isAuthenticated(true)
-                            .accessExpiration(accessTokenExpirySeconds)
-                            .refreshExpiration(refreshTokenExpirySeconds)
-                            .build();
-        }).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
-        else throw new BadCredentialsException("The given credentials are incorrect");
+        if (!auth.isAuthenticated())
+            throw new BadCredentialsException("The given credentials are incorrect");
+
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+    }
+
+    private AuthResponse generateAuthResponse(User user, long accessExpiryInSeconds, long refreshExpirySeconds) {
+        return AuthResponse.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .roles(user.getRoles().stream().map(UserRole::name).toList())
+                .isAuthenticated(true)
+                .accessExpiration(accessExpiryInSeconds)
+                .refreshExpiration(refreshExpirySeconds)
+                .build();
+    }
+
+    @Override
+    public HttpHeaders grantLoginAccess(AuthResponse authResponse) {
+        HttpHeaders headers = new HttpHeaders();
+
+        if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)
+            generateAccessToken(authResponse.getUsername(), authResponse.getRoles(), headers);
+
+        if (authResponse.getRefreshExpiration() == refreshTokenExpirySeconds)
+            generateRefreshToken(authResponse.getUsername(), authResponse.getRoles(), headers);
+
+        return headers;
     }
 
     @Override
@@ -166,146 +188,138 @@ public class AuthServiceImpl implements AuthService {
         String username = jwtService.extractUsername(refreshToken);
         Date refreshExpiration = jwtService.extractExpiry(refreshToken);
         Date refreshIssuedAt = jwtService.extractIssuedAt(refreshToken);
-        Date accessExpiration = null;
+        Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
 
-        /* set accessToken to null if the token is invalid,
-        ensuring the that there are no unnecessary exception thrown to the user
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+
+        /*Calculating new Access Expiration -
+        Updates new time if the access token is valid, else sets default access time
+          */
+        long evaluatedAccessExpiration = accessTokenExpirySeconds;
+        if (accessExpiration != null) {
+            evaluatedAccessExpiration = this.getLeftOverSeconds(accessExpiration);
+        }
+
+        /* Validating if the refresh token was issued before 24 hours.
+        If yes, the token is blocked and the evaluatedRefreshExpiration will be the default refresh expiration time
+        else, the evaluatedRefreshExpiration will be the leftover time for expiration
          */
-        try {
-            accessExpiration = accessToken != null ? jwtService.extractExpiry(accessToken) : null;
-        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
-            accessToken = null;
-        }
-
-        // getting the leftover expiration duration for refresh token and access token
-        long evaluatedAccessExpiration = accessExpiration != null
-                ? accessTokenExpirySeconds - ((new Date().getTime() - accessExpiration.getTime()) / 1000)
-                : accessTokenExpirySeconds;
-        boolean newRefreshRequired = refreshIssuedAt.before(new Date()) && (refreshIssuedAt.getTime() - new Date().getTime()) > 24 * 60 * 60 * 1000;
-        long evaluatedRefreshExpiration = newRefreshRequired
-                ? refreshTokenExpirySeconds
-                : refreshTokenExpirySeconds - ((new Date().getTime() - refreshExpiration.getTime()) / 1000);
-
-        HttpHeaders headers = new HttpHeaders();
-
-        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
-        // validating if the accessToken is not already present
-        if (accessToken == null) this.generateAccessToken(user, headers);
-
-        // validating if the refresh token was issued before 24 hours.
-        if (newRefreshRequired) {
-            // blocking old token
+        long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
+        if (!this.isNewRefreshRequired(refreshIssuedAt)) {
+            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshExpiration);
             this.blockRefreshToken(refreshToken);
-            // generating new refresh token
-            this.generateRefreshToken(user, headers);
         }
 
-        return AuthResponse.builder()
-                        .userId(user.getUserId())
-                        .username(user.getUsername())
-                        .roles(user.getRoles().stream().map(UserRole::name).toList())
-                        .isAuthenticated(true)
-                        .accessExpiration(evaluatedAccessExpiration)
-                        .refreshExpiration(evaluatedRefreshExpiration)
-                        .build();
+        return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
+    }
+
+    private Date getAccessExpiration(String token) {
+        try {
+            return jwtService.extractExpiry(token);
+        } catch (JwtException ex) {
+            return null;
+        }
+    }
+
+    private long getLeftOverSeconds(Date tokenExpiration) {
+        return refreshTokenExpirySeconds - ((new Date().getTime() - tokenExpiration.getTime()) / 1000);
+    }
+
+    private boolean isNewRefreshRequired(Date issuedAt) {
+        return issuedAt.before(new Date()) && (issuedAt.getTime() - new Date().getTime()) > 24 * 60 * 60 * 1000;
     }
 
     @Override
-    public boolean logout(String refreshToken, String accessToken) {
+    public void logout(String refreshToken, String accessToken) {
+        blockAccessToken(accessToken);
+        blockRefreshToken(refreshToken);
+    }
 
-        // resetting tokens with blank value and 0 maxAge
+    @Override
+    public HttpHeaders invalidateTokens() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
-        // blocking the tokens
-        blockAccessToken(accessToken);
-        blockRefreshToken(refreshToken);
 
-        return true;
+        return headers;
     }
 
     @Override
-    public boolean revokeAllOtherTokens(String refreshToken, String accessToken) {
-        if (refreshToken == null || accessToken == null)
-            throw new UserNotLoggedInException("Failed to revoke access from all other devices");
+    public void revokeAllOtherTokens(String refreshToken, String accessToken) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        return userRepo.findByUsername(username).map(user -> {
+        userRepo.findByUsername(username).ifPresent(user -> {
             // blocking all other access tokens
-            accessTokenRepo.findAllByUserAndIsBlocked(user, false)
-                    .forEach(at -> {
-                        if (!at.getToken().equals(accessToken)) at.setBlocked(true);
-                        accessTokenRepo.save(at);
-                    });
+            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, accessToken);
+            this.blockAllAccessTokens(accessTokens);
+
             // blocking all other refresh tokens
-            refreshTokenRepo.findALLByUserAndIsBlocked(user, false)
-                    .forEach(rt -> {
-                        if (!rt.getToken().equals(refreshToken)) rt.setBlocked(true);
-                        refreshTokenRepo.save(rt);
-                    });
+            List<RefreshToken> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlockedAndTokenNot(user, false, refreshToken);
+            this.blockAllRefreshTokens(refreshTokens);
+        });
+    }
 
-            return true;
+    private void blockAllAccessTokens(List<AccessToken> tokens) {
+        tokens.forEach(token -> {
+            token.setBlocked(true);
+            accessTokenRepo.save(token);
+        });
+    }
 
-        }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
+    private void blockAllRefreshTokens(List<RefreshToken> tokens) {
+        tokens.forEach(token -> {
+            token.setBlocked(true);
+            refreshTokenRepo.save(token);
+        });
     }
 
     @Override
-    public boolean revokeAllTokens() {
+    public void revokeAllTokens() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        return userRepo.findByUsername(username).map(user -> {
+        userRepo.findByUsername(username).ifPresent(user -> {
             // blocking all other access tokens
-            accessTokenRepo.findAllByUserAndIsBlocked(user, false)
-                    .forEach(at -> {
-                        at.setBlocked(true);
-                        accessTokenRepo.save(at);
-                    });
+            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlocked(user, false);
+            this.blockAllAccessTokens(accessTokens);
+
             // blocking all other refresh tokens
-            refreshTokenRepo.findALLByUserAndIsBlocked(user, false)
-                    .forEach(rt -> {
-                        rt.setBlocked(true);
-                        refreshTokenRepo.save(rt);
-                    });
-
-            // resetting tokens with blank value and 0 maxAge
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
-
-            return true;
-
-        }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
+            List<RefreshToken> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false);
+            this.blockAllRefreshTokens(refreshTokens);
+        });
     }
 
     /* ----------------------------------------------------------------------------------------------------------- */
-    private void generateAccessToken(User user, HttpHeaders headers) {
+    private void generateAccessToken(String username, List<String> roles, HttpHeaders headers) {
         //generating access token
-        String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
+        String newAccessToken = jwtService.generateAccessToken(username, roles.toString());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
 
         // saving access token to the database
-        accessTokenRepo.save(AccessToken.builder()
-                .isBlocked(false)
-                .token(newAccessToken)
-                .expiration(LocalDateTime.now().plusSeconds(accessTokenExpirySeconds))
-                .user(user).build());
+        // will be caching tokens in future
+//        accessTokenRepo.save(AccessToken.builder()
+//                .isBlocked(false)
+//                .token(newAccessToken)
+//                .expiration(LocalDateTime.now().plusSeconds(accessTokenExpirySeconds))
+//                .user(user).build());
     }
 
-    private void generateRefreshToken(User user, HttpHeaders headers) {
+    private void generateRefreshToken(String username, List<String> roles, HttpHeaders headers) {
         //generating access token
-        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
+        String newRefreshToken = jwtService.generateRefreshToken(username, roles.toString());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
 
         // saving refresh token to the database
-        refreshTokenRepo.save(RefreshToken.builder()
-                .isBlocked(false)
-                .token(newRefreshToken)
-                .expiration(LocalDateTime.now().plusSeconds(refreshTokenExpirySeconds))
-                .user(user).build());
+        // will be caching tokens in future
+//        refreshTokenRepo.save(RefreshToken.builder()
+//                .isBlocked(false)
+//                .token(newRefreshToken)
+//                .expiration(LocalDateTime.now().plusSeconds(refreshTokenExpirySeconds))
+//                .user(user).build());
     }
 
     private void blockAccessToken(String accessToken) {
@@ -341,36 +355,36 @@ public class AuthServiceImpl implements AuthService {
                         ? Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER)
                         : List.of(UserRole.CUSTOMER))
                 .build();
-}
+    }
 
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
         String text =
                 "<!DOCTYPE html>\n" +
-                "<html lang=\"en\">\n" +
-                "<head>\n" +
-                "    <meta charset=\"UTF-8\">\n" +
-                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                "    <title>Mail</title>\n" +
-                "</head>\n" +
-                "<style>\n" +
-                "    *{\n" +
-                "        font-family: Verdana, Geneva, Tahoma, sans-serif\n" +
-                "    }\n" +
-                "    h4 {\n" +
-                "        color: rgb(0, 98, 255);\n" +
-                "    }\n" +
-                "</style>\n" +
-                "<body>\n" +
-                "    <div>\n" +
-                "        <h3>Hurrey!!! You are just few steps away!</h3>\n" +
-                "        <p>Please use this OTP given below for further verification.</p>\n" +
-                "        <h4>" + otp + "</h4>\n" +
-                "        <br> <br> <br>\n" +
-                "        <p>with best regards</p>\n" +
-                "        <p>E Stores</p>\n" +
-                "    </div>\n" +
-                "</body>\n" +
-                "</html>";
+                        "<html lang=\"en\">\n" +
+                        "<head>\n" +
+                        "    <meta charset=\"UTF-8\">\n" +
+                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                        "    <title>Mail</title>\n" +
+                        "</head>\n" +
+                        "<style>\n" +
+                        "    *{\n" +
+                        "        font-family: Verdana, Geneva, Tahoma, sans-serif\n" +
+                        "    }\n" +
+                        "    h4 {\n" +
+                        "        color: rgb(0, 98, 255);\n" +
+                        "    }\n" +
+                        "</style>\n" +
+                        "<body>\n" +
+                        "    <div>\n" +
+                        "        <h3>Hurrey!!! You are just few steps away!</h3>\n" +
+                        "        <p>Please use this OTP given below for further verification.</p>\n" +
+                        "        <h4>" + otp + "</h4>\n" +
+                        "        <br> <br> <br>\n" +
+                        "        <p>with best regards</p>\n" +
+                        "        <p>E Stores</p>\n" +
+                        "    </div>\n" +
+                        "</body>\n" +
+                        "</html>";
 
         mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
