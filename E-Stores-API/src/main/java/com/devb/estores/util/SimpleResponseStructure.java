@@ -21,4 +21,11 @@ public class SimpleResponseStructure {
         return this;
     }
 
+    public static SimpleResponseStructure create(int status, String message) {
+        return SimpleResponseStructure.builder()
+                .status(status)
+                .message(message)
+                .build();
+    }
+
 }

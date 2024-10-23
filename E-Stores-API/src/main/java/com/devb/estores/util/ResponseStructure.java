@@ -27,4 +27,11 @@ public class ResponseStructure<T> {
         return this;
     }
 
+    public static <T> ResponseStructure<T> create(int status, String message, T data) {
+        return ResponseStructure.<T>builder()
+                .status(status)
+                .message(message)
+                .data(data)
+                .build();
+    }
 }

@@ -11,40 +11,26 @@ public class AppResponseBuilder {
     public <T> ResponseEntity<ResponseStructure<T>> success(HttpStatus status, String message, T data) {
         return ResponseEntity
                 .status(status)
-                .body(ResponseStructure.<T>builder()
-                        .status(status.value())
-                        .message(message)
-                        .data(data)
-                        .build());
+                .body(ResponseStructure.create(status.value(), message, data));
     }
 
     public <T> ResponseEntity<ResponseStructure<T>> success(HttpStatus status, HttpHeaders headers, String message, T data) {
         return ResponseEntity
                 .status(status)
                 .headers(headers)
-                .body(ResponseStructure.<T>builder()
-                        .status(status.value())
-                        .message(message)
-                        .data(data)
-                        .build());
+                .body(ResponseStructure.create(status.value(), message, data));
     }
 
     public ResponseEntity<SimpleResponseStructure> success(HttpStatus status, String message) {
         return ResponseEntity
                 .status(status)
-                .body(SimpleResponseStructure.builder()
-                        .message(message)
-                        .status(status.value())
-                        .build());
+                .body(SimpleResponseStructure.create(status.value(), message));
     }
 
     public ResponseEntity<SimpleResponseStructure> success(HttpStatus status, HttpHeaders headers, String message) {
         return ResponseEntity
                 .status(status)
                 .headers(headers)
-                .body(SimpleResponseStructure.builder()
-                        .message(message)
-                        .status(status.value())
-                        .build());
+                .body(SimpleResponseStructure.create(status.value(), message));
     }
 }
