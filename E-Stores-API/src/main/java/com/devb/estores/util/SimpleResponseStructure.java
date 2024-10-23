@@ -1,25 +1,19 @@
 package com.devb.estores.util;
 
 import lombok.Builder;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 @Builder
 public class SimpleResponseStructure {
     private int status;
     private String message;
 
-    public int getStatus() {
-        return status;
-    }
-
     public SimpleResponseStructure setStatus(int status) {
         this.status = status;
         return this;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
     public SimpleResponseStructure setMessage(String message) {
