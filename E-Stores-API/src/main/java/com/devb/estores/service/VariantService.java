@@ -8,5 +8,5 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 public interface VariantService {
-    ResponseEntity<ResponseStructure<List<VariantResponse>>> updateVariants(List<VariantRequest> variantRequest, String productId);
+    List<VariantResponse> updateVariants(List<VariantRequest> variantRequest, String productId);
 }

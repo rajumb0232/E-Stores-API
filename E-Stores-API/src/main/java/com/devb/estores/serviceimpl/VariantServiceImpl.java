@@ -10,13 +10,10 @@ import com.devb.estores.repository.VariantRepo;
 import com.devb.estores.requestdto.VariantRequest;
 import com.devb.estores.responsedto.VariantResponse;
 import com.devb.estores.service.VariantService;
-import com.devb.estores.util.ResponseStructure;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,43 +22,43 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class VariantServiceImpl implements VariantService {
 
-    private VariantRepo variantRepo;
-    private ProductRepo productRepo;
-    private VariantMapper variantMapper;
+    private final VariantRepo variantRepo;
+    private final ProductRepo productRepo;
+    private final VariantMapper variantMapper;
 
     @Override
-    public ResponseEntity<ResponseStructure<List<VariantResponse>>> updateVariants(List<VariantRequest> variantRequest, String productId) {
+    @Transactional
+    public List<VariantResponse> updateVariants(List<VariantRequest> variantRequest, String productId) {
 
         return productRepo.findById(productId).map(product -> {
+
             /* The product found should be a varying product
              * */
             if (product instanceof VaryingProduct varyingProduct) {
-                variantRequest.forEach(req -> {
-                    /*
-                     * Validating if the given set specs are same are the defined variantBy in the product
-                     * This ensures that there are same exact set of specs in every variant with differing values
-                     * */
-                    Set<String> names = new HashSet<>(req.getSpecifications().keySet());
-                    if (!varyingProduct.getVariantBy().equals(names))
-                        throw new InvalidVariantGroupException("Invalid variant group made. expected to be a group of " + varyingProduct.getVariantBy());
-                });
-                /*
-                 * Saving the variants to the database by iterating on each
-                 * */
-                Set<Variant> variants = variantRequest.stream()
-                        .map(variantMapper::mapToVariantEntity)
-                        .map(variant -> variantRepo.save(variant))
-                        .collect(Collectors.toSet());
+                Set<Variant> variants = this.validateVariantsConsistency(variantRequest, varyingProduct.getVariantBy());
 
                 varyingProduct.getVariants().addAll(variants);
                 productRepo.save(varyingProduct);
 
-                return ResponseEntity.ok(new ResponseStructure<List<VariantResponse>>()
-                        .setData(variantMapper.mapToVariantResponseList(variants))
-                        .setMessage("Variants added successfully")
-                        .setStatus(HttpStatus.OK.value()));
+                return variantMapper.mapToVariantResponseList(variants);
             } else throw new InvalidOperationException("The product is simple product, not a varying product");
         }).orElseThrow();
+    }
+
+    private Set<Variant> validateVariantsConsistency(List<VariantRequest> variantRequest, Set<String> variantBy) {
+        return variantRequest.stream()
+                .map(req -> {
+                    /*
+                     * Validating if the given set specs are same are the defined variantBy in the product
+                     * This ensures that there are same exact set of specs in every variant with differing values
+                     * */
+                    if (!req.getSpecifications().keySet().equals(variantBy))
+                        throw new InvalidVariantGroupException("Invalid variant group made. Expected to be a group of " + variantBy);
+
+                    return variantMapper.mapToVariantEntity(req);
+
+                }).map(variantRepo::save)
+                .collect(Collectors.toSet());
     }
 }
 
