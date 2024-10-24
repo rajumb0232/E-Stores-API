@@ -50,17 +50,21 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final CookieManager cookieManager;
     private final Random random;
+    private final long accessTokenExpirySeconds;
+    private final long refreshTokenExpirySeconds;
 
     public AuthServiceImpl(UserRepo userRepo,
                            AccessTokenRepo accessTokenRepo,
                            RefreshTokenRepo refreshTokenRepo,
                            PasswordEncoder passwordEncoder,
-                           MailService mailService, CacheStore<OtpModel> otpCache,
-                           CacheStore<User> userCacheStore,
+                           MailService mailService,
+                           CacheStore<OtpModel> otpCache, CacheStore<User> userCacheStore,
                            JwtService jwtService,
                            AuthenticationManager authenticationManager,
                            CookieManager cookieManager,
-                           Random random) {
+                           Random random,
+                           @Value("${token.expiry.access.seconds}") long accessTokenExpirySeconds,
+                           @Value("${token.expiry.refresh.seconds}") long refreshTokenExpirySeconds) {
         this.userRepo = userRepo;
         this.accessTokenRepo = accessTokenRepo;
         this.refreshTokenRepo = refreshTokenRepo;
@@ -72,12 +76,9 @@ public class AuthServiceImpl implements AuthService {
         this.authenticationManager = authenticationManager;
         this.cookieManager = cookieManager;
         this.random = random;
+        this.accessTokenExpirySeconds = accessTokenExpirySeconds;
+        this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
     }
-
-    @Value("${token.expiry.access.seconds}")
-    private long accessTokenExpirySeconds;
-    @Value("${token.expiry.refresh.seconds}")
-    private long refreshTokenExpirySeconds;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
