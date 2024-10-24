@@ -56,7 +56,7 @@ public class AuthController extends ResponseEntityExceptionHandler {
                                                                  @CookieValue(name = "rt", required = false) String refreshToken,
                                                                  @CookieValue(name = "at", required = false) String accessToken) {
         AuthResponse response = authService.login(authRequest, refreshToken, accessToken);
-        HttpHeaders headers = authService.grantLoginAccess(response);
+        HttpHeaders headers = authService.grantAccess(response);
         return responseBuilder.success(HttpStatus.OK, headers, "Login Successful", response);
     }
 
@@ -74,7 +74,7 @@ public class AuthController extends ResponseEntityExceptionHandler {
     public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(@CookieValue(name = "rt", required = false) String refreshToken,
                                                                         @CookieValue(name = "at", required = false) String accessToken) {
         AuthResponse response = authService.refreshLogin(refreshToken, accessToken);
-        HttpHeaders headers = authService.grantLoginAccess(response);
+        HttpHeaders headers = authService.grantAccess(response);
         return responseBuilder.success(HttpStatus.OK, headers, "Access Refreshed Successfully", response);
     }
 

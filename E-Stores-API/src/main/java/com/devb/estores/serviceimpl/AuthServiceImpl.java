@@ -161,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public HttpHeaders grantLoginAccess(AuthResponse authResponse) {
+    public HttpHeaders grantAccess(AuthResponse authResponse) {
         HttpHeaders headers = new HttpHeaders();
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)

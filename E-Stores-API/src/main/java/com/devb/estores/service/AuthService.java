@@ -15,7 +15,7 @@ public interface AuthService {
 
     AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken);
 
-    HttpHeaders grantLoginAccess(AuthResponse authResponse);
+    HttpHeaders grantAccess(AuthResponse authResponse);
 
     void logout(String refreshToken, String accessToken);
 
