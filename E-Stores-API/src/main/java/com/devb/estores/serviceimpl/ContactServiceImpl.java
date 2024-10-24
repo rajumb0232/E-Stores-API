@@ -7,10 +7,7 @@ import com.devb.estores.repository.AddressRepo;
 import com.devb.estores.repository.ContactRepo;
 import com.devb.estores.requestdto.ContactRequest;
 import com.devb.estores.service.ContactService;
-import com.devb.estores.util.ResponseStructure;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

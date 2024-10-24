@@ -2,7 +2,6 @@ package com.devb.estores.util;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 
 @Getter
 @Builder

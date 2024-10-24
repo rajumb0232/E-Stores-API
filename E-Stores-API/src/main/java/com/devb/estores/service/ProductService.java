@@ -1,6 +1,5 @@
 package com.devb.estores.service;
 
-import com.devb.estores.util.SimpleResponseStructure;
 import com.devb.estores.requestdto.ProductRequest;
 import com.devb.estores.responsedto.ProductResponse;
 

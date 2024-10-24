@@ -7,10 +7,7 @@ import com.devb.estores.repository.StoreRepo;
 import com.devb.estores.requestdto.AddressRequest;
 import com.devb.estores.responsedto.AddressResponse;
 import com.devb.estores.service.AddressService;
-import com.devb.estores.util.ResponseStructure;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

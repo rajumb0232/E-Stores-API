@@ -8,10 +8,7 @@ import com.devb.estores.exceptions.InvalidTopCategoryException;
 import com.devb.estores.model.ProductType;
 import com.devb.estores.repository.ProductTypeRepo;
 import com.devb.estores.service.ProductTypeService;
-import com.devb.estores.util.ResponseStructure;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

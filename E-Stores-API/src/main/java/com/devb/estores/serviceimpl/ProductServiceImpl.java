@@ -14,11 +14,7 @@ import com.devb.estores.requestdto.ProductRequest;
 import com.devb.estores.requestdto.VaryingProductRequest;
 import com.devb.estores.responsedto.ProductResponse;
 import com.devb.estores.service.ProductService;
-import com.devb.estores.util.ResponseStructure;
-import com.devb.estores.util.SimpleResponseStructure;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
