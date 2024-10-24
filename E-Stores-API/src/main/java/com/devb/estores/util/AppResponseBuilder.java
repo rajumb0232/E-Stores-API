@@ -33,4 +33,10 @@ public class AppResponseBuilder {
                 .headers(headers)
                 .body(SimpleResponseStructure.create(status.value(), message));
     }
+
+    public <T> ResponseEntity<T> success(HttpStatus status, T data) {
+        return ResponseEntity
+                .status(status)
+                .body(data);
+    }
 }
