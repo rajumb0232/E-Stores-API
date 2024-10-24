@@ -25,36 +25,44 @@ public class ProductTypeServiceImpl implements ProductTypeService {
     private final ProductTypeRepo typeRepo;
 
     @Override
-    public ResponseEntity<ResponseStructure<List<ProductType>>> addProductTypes(String topCategory, String subCategory, String[] productTypes) {
+    public List<ProductType> addProductTypes(String topCategory, String subCategory, String[] productTypes) {
         TopCategory topCategoryEnum = validateAndGetTopCategory(topCategory);
         SubCategory subCategoryEnum = validateAndGetSubCategory(subCategory);
+
         /*
-        * validating if the SubCategory given is one of them under the TopCategory
-         * If not one of them, throw an exception
-         * */
+         validating if the SubCategory given is one of them under the TopCategory
+         If not one of them, throw an exception
+         */
         if (!topCategoryEnum.getSubCategories().contains(subCategoryEnum))
             throw new InvalidSubCategoryException("Failed to add product type");
+
         /*
-        * collects the generated list of ProductTypes after ensuring if the similar ProductType doesn't already exist
-         * in the database, and if the product type name contains only alphabetical characters with allowed special
-         * character '-'
-         * */
+         collects the generated list of ProductTypes after ensuring if the similar ProductType doesn't already exist
+         in the database, and if the product type name contains only alphabetical characters with allowed special
+         character '-'
+         */
         List<ProductType> types = Stream.of(productTypes)
                 .filter(productType -> !typeRepo.existsByTypeNameAndSubCategoryAndTopCategory(productType.toLowerCase(), subCategoryEnum, topCategoryEnum))
-                .map(productType -> {
-                    if (!Pattern.matches("^[A-Za-z-]*$", productType))
-                        throw new InvalidProductTypeNameException("Failed to add product type");
-                    return ProductType.builder()
-                            .typeName(productType.toLowerCase())
-                            .subCategory(subCategoryEnum)
-                            .topCategory(topCategoryEnum)
-                            .build();
-                }).toList();
+                .map(typeName -> this.validateAndSaveProductType(typeName, subCategoryEnum, topCategoryEnum)).toList();
 
-        types = typeRepo.saveAll(types);
-        return ResponseEntity.ok(new ResponseStructure<List<ProductType>>().setStatus(HttpStatus.OK.value())
-                .setMessage("Product types added")
-                .setData(types));
+        return typeRepo.saveAll(types);
+    }
+
+    /**
+     * @throws InvalidProductTypeNameException if the given tagName doesn't match the pattern
+     *                                         "^[A-Za-z_]$",
+     *                                         <p>
+     *                                         else saves the data to the database
+     */
+    private ProductType validateAndSaveProductType(String typeName, SubCategory subCategory, TopCategory topCategory) {
+        if (!Pattern.matches("^[A-Za-z_]*$", typeName))
+            throw new InvalidProductTypeNameException("Failed to add product type");
+
+        return typeRepo.save(ProductType.builder()
+                .typeName(typeName.toLowerCase())
+                .subCategory(subCategory)
+                .topCategory(topCategory)
+                .build());
     }
 
     /**
