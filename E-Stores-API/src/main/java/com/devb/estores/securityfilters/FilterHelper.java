@@ -48,9 +48,10 @@ public class FilterHelper {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("Application/json");
         response.setHeader("error", message);
-        SimpleResponseStructure structure = new SimpleResponseStructure()
-                .setStatus(HttpStatus.UNAUTHORIZED.value())
-                .setMessage(message);
+        SimpleResponseStructure structure = SimpleResponseStructure.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .message(message)
+                .build();
         new ObjectMapper().writeValue(response.getOutputStream(), structure);
     }
 }
