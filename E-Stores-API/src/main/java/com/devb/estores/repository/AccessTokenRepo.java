@@ -1,6 +1,5 @@
 package com.devb.estores.repository;
 
-import com.devb.estores.model.AccessToken;
 import com.devb.estores.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

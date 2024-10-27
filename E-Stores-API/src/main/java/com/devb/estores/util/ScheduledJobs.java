@@ -1,7 +1,6 @@
 package com.devb.estores.util;
 
-import com.devb.estores.model.AccessToken;
-import com.devb.estores.model.RefreshToken;
+import com.devb.estores.security.FingerPrint;
 import com.devb.estores.repository.AccessTokenRepo;
 import com.devb.estores.repository.RefreshTokenRepo;
 import lombok.AllArgsConstructor;
@@ -26,7 +25,7 @@ public class ScheduledJobs {
 
     @Scheduled(fixedDelay = 60 * 60 * 1000l)
     public void deleteAllExpiredRefreshTokens() {
-        List<RefreshToken> rts =  refreshTokenRepo.findAllByExpirationBefore(LocalDateTime.now());
+        List<FingerPrint> rts =  refreshTokenRepo.findAllByExpirationBefore(LocalDateTime.now());
         if(rts!=null && !rts.isEmpty()) refreshTokenRepo.deleteAll(rts);
     }
 }

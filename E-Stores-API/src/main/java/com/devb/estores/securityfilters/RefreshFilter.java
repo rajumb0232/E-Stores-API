@@ -24,7 +24,7 @@ public class RefreshFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        log.info("Authenticating Token with Refresh Filter...");
+        log.info("Authenticating FingerPrint with Refresh Filter...");
         String rt = FilterHelper.extractCookie("rt", request.getCookies());
 
         if (rt == null) throw new UserNotLoggedInException("User not logged in | no credentials found");

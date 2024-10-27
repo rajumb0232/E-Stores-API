@@ -5,8 +5,7 @@ import com.devb.estores.dto.MessageData;
 import com.devb.estores.dto.OtpModel;
 import com.devb.estores.enums.UserRole;
 import com.devb.estores.exceptions.*;
-import com.devb.estores.model.AccessToken;
-import com.devb.estores.model.RefreshToken;
+import com.devb.estores.security.FingerPrint;
 import com.devb.estores.model.User;
 import com.devb.estores.repository.AccessTokenRepo;
 import com.devb.estores.repository.RefreshTokenRepo;
@@ -247,7 +246,7 @@ public class AuthServiceImpl implements AuthService {
             this.blockAllAccessTokens(accessTokens);
 
             // blocking all other refresh tokens
-            List<RefreshToken> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlockedAndTokenNot(user, false, refreshToken);
+            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlockedAndTokenNot(user, false, refreshToken);
             this.blockAllRefreshTokens(refreshTokens);
         });
     }
@@ -259,7 +258,7 @@ public class AuthServiceImpl implements AuthService {
         });
     }
 
-    private void blockAllRefreshTokens(List<RefreshToken> tokens) {
+    private void blockAllRefreshTokens(List<FingerPrint> tokens) {
         tokens.forEach(token -> {
             token.setBlocked(true);
             refreshTokenRepo.save(token);
@@ -276,7 +275,7 @@ public class AuthServiceImpl implements AuthService {
             this.blockAllAccessTokens(accessTokens);
 
             // blocking all other refresh tokens
-            List<RefreshToken> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false);
+            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false);
             this.blockAllRefreshTokens(refreshTokens);
         });
     }
@@ -307,7 +306,7 @@ public class AuthServiceImpl implements AuthService {
 
         // saving refresh token to the database
         // will be caching tokens in future
-//        refreshTokenRepo.save(RefreshToken.builder()
+//        refreshTokenRepo.save(FingerPrint.builder()
 //                .isBlocked(false)
 //                .token(newRefreshToken)
 //                .expiration(LocalDateTime.now().plusSeconds(refreshTokenExpirySeconds))

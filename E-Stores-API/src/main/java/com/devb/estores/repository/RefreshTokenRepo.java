@@ -1,6 +1,6 @@
 package com.devb.estores.repository;
 
-import com.devb.estores.model.RefreshToken;
+import com.devb.estores.security.FingerPrint;
 import com.devb.estores.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -8,16 +8,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface RefreshTokenRepo extends JpaRepository<RefreshToken, String> {
-    Optional<RefreshToken> findByToken(String refreshToken);
+public interface RefreshTokenRepo extends JpaRepository<FingerPrint, String> {
+    Optional<FingerPrint> findByToken(String refreshToken);
 
-    Optional<RefreshToken> findByUser(User user);
+    Optional<FingerPrint> findByUser(User user);
 
-    List<RefreshToken> findALLByUserAndIsBlocked(User user, boolean isBlocked);
+    List<FingerPrint> findALLByUserAndIsBlocked(User user, boolean isBlocked);
 
-    List<RefreshToken> findAllByExpirationBefore(LocalDateTime now);
+    List<FingerPrint> findAllByExpirationBefore(LocalDateTime now);
 
     boolean existsByTokenAndIsBlocked(String token, boolean isBlocked);
 
-    List<RefreshToken> findALLByUserAndIsBlockedAndTokenNot(User user, boolean isBlocked, String token);
+    List<FingerPrint> findALLByUserAndIsBlockedAndTokenNot(User user, boolean isBlocked, String token);
 }

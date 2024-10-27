@@ -24,7 +24,7 @@ public class AuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        log.info("Authenticating Token with JWT Filter...");
+        log.info("Authenticating FingerPrint with JWT Filter...");
         String accessToken = FilterHelper.extractCookie("at", request.getCookies());
 
 
