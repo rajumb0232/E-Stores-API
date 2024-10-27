@@ -2,6 +2,7 @@ package com.devb.estores.securityfilters;
 
 import com.devb.estores.exceptions.UserNotLoggedInException;
 import com.devb.estores.security.JwtService;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -13,30 +14,29 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @AllArgsConstructor
 public class AuthFilter extends OncePerRequestFilter {
 
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("Authenticating FingerPrint with JWT Filter...");
         String accessToken = FilterHelper.extractCookie("at", request.getCookies());
 
-
+        if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
         try {
-            if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
-//            if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
-//                throw new UserNotLoggedInException("Failed to authenticate the user");
-
             log.info("Extracting credentials...");
 
-//            String username = jwtService.getUsername(accessToken);
-//            String roles = jwtService.getUserRoles(accessToken);
-//
-//            FilterHelper.setAuthentication(username, roles, request);
+            Claims claims = jwtService.extractClaims(accessToken);
+            String username = jwtService.getUsername(claims);
+            List roles = jwtService.getUserRoles(claims);
+
+            FilterHelper.setAuthentication(username, roles, request);
             log.info("Authentication Successful");
 
             filterChain.doFilter(request, response);

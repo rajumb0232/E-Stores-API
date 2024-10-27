@@ -2,6 +2,7 @@ package com.devb.estores.securityfilters;
 
 import com.devb.estores.exceptions.UserNotLoggedInException;
 import com.devb.estores.security.JwtService;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -13,12 +14,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @AllArgsConstructor
 @Slf4j
 public class RefreshFilter extends OncePerRequestFilter {
 
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -26,15 +28,13 @@ public class RefreshFilter extends OncePerRequestFilter {
         String rt = FilterHelper.extractCookie("rt", request.getCookies());
 
         if (rt == null) throw new UserNotLoggedInException("User not logged in | no credentials found");
-//        if (refreshTokenRepo.existsByTokenAndIsBlocked(rt, true))
-//            throw new UserNotLoggedInException("Access blocked | try login again");
-
         try {
             log.info("Extracting credentials...");
-//            String username = jwtService.getUsername(rt);
-//            String roles = jwtService.getUserRoles(rt);
-//
-//            FilterHelper.setAuthentication(username, roles, request);
+            Claims claims = jwtService.extractClaims(rt);
+            String username = jwtService.getUsername(claims);
+            List roles = jwtService.getUserRoles(claims);
+
+            FilterHelper.setAuthentication(username, roles, request);
             log.info("JWT Authentication Successful");
 
         } catch (ExpiredJwtException ex) {
