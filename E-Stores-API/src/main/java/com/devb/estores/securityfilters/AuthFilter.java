@@ -1,7 +1,6 @@
 package com.devb.estores.securityfilters;
 
 import com.devb.estores.exceptions.UserNotLoggedInException;
-import com.devb.estores.repository.AccessTokenRepo;
 import com.devb.estores.security.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -20,7 +19,6 @@ import java.io.IOException;
 public class AuthFilter extends OncePerRequestFilter {
 
     private JwtService jwtService;
-    private AccessTokenRepo accessTokenRepo;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -30,8 +28,8 @@ public class AuthFilter extends OncePerRequestFilter {
 
         try {
             if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
-            if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
-                throw new UserNotLoggedInException("Failed to authenticate the user");
+//            if (accessTokenRepo.existsByTokenAndIsBlocked(accessToken, true))
+//                throw new UserNotLoggedInException("Failed to authenticate the user");
 
             log.info("Extracting credentials...");
 

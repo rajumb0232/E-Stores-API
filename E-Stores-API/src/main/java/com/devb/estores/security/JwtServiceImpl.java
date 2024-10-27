@@ -30,12 +30,12 @@ public class JwtServiceImpl implements JwtService {
     public static final String CLAIM_ROLES = "roles";
 
     public String generateAccessToken(String username, String roles) {
-        log.info("Generating Access FingerPrint...");
+        log.info("Generating Access Token...");
         return createJwtToken(roles, username, accessTokenExpirySeconds * 1000L);
     }
 
     public String generateRefreshToken(String username, String roles) {
-        log.info("Generating Refresh FingerPrint...");
+        log.info("Generating Refresh Token...");
         return createJwtToken(roles, username, refreshTokenExpirySeconds * 1000L);
     }
 

@@ -1,7 +1,6 @@
 package com.devb.estores.securityfilters;
 
 import com.devb.estores.exceptions.UserNotLoggedInException;
-import com.devb.estores.repository.RefreshTokenRepo;
 import com.devb.estores.security.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -20,7 +19,6 @@ import java.io.IOException;
 public class RefreshFilter extends OncePerRequestFilter {
 
     private JwtService jwtService;
-    private RefreshTokenRepo refreshTokenRepo;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -28,8 +26,8 @@ public class RefreshFilter extends OncePerRequestFilter {
         String rt = FilterHelper.extractCookie("rt", request.getCookies());
 
         if (rt == null) throw new UserNotLoggedInException("User not logged in | no credentials found");
-        if (refreshTokenRepo.existsByTokenAndIsBlocked(rt, true))
-            throw new UserNotLoggedInException("Access blocked | try login again");
+//        if (refreshTokenRepo.existsByTokenAndIsBlocked(rt, true))
+//            throw new UserNotLoggedInException("Access blocked | try login again");
 
         try {
             log.info("Extracting credentials...");

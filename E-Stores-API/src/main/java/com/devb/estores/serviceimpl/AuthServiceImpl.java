@@ -5,10 +5,7 @@ import com.devb.estores.dto.MessageData;
 import com.devb.estores.dto.OtpModel;
 import com.devb.estores.enums.UserRole;
 import com.devb.estores.exceptions.*;
-import com.devb.estores.security.FingerPrint;
 import com.devb.estores.model.User;
-import com.devb.estores.repository.AccessTokenRepo;
-import com.devb.estores.repository.RefreshTokenRepo;
 import com.devb.estores.repository.UserRepo;
 import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
@@ -39,8 +36,6 @@ import java.util.Random;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepo userRepo;
-    private final AccessTokenRepo accessTokenRepo;
-    private final RefreshTokenRepo refreshTokenRepo;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final CacheStore<OtpModel> otpCache;
@@ -53,8 +48,6 @@ public class AuthServiceImpl implements AuthService {
     private final long refreshTokenExpirySeconds;
 
     public AuthServiceImpl(UserRepo userRepo,
-                           AccessTokenRepo accessTokenRepo,
-                           RefreshTokenRepo refreshTokenRepo,
                            PasswordEncoder passwordEncoder,
                            MailService mailService,
                            CacheStore<OtpModel> otpCache, CacheStore<User> userCacheStore,
@@ -65,8 +58,6 @@ public class AuthServiceImpl implements AuthService {
                            @Value("${token.expiry.access.seconds}") long accessTokenExpirySeconds,
                            @Value("${token.expiry.refresh.seconds}") long refreshTokenExpirySeconds) {
         this.userRepo = userRepo;
-        this.accessTokenRepo = accessTokenRepo;
-        this.refreshTokenRepo = refreshTokenRepo;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
         this.otpCache = otpCache;
@@ -242,28 +233,28 @@ public class AuthServiceImpl implements AuthService {
 
         userRepo.findByUsername(username).ifPresent(user -> {
             // blocking all other access tokens
-            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, accessToken);
-            this.blockAllAccessTokens(accessTokens);
+//            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, accessToken);
+//            this.blockAllAccessTokens(accessTokens);
 
             // blocking all other refresh tokens
-            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlockedAndTokenNot(user, false, refreshToken);
-            this.blockAllRefreshTokens(refreshTokens);
+//            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlockedAndTokenNot(user, false, refreshToken);
+//            this.blockAllRefreshTokens(refreshTokens);
         });
     }
 
-    private void blockAllAccessTokens(List<AccessToken> tokens) {
-        tokens.forEach(token -> {
-            token.setBlocked(true);
-            accessTokenRepo.save(token);
-        });
-    }
-
-    private void blockAllRefreshTokens(List<FingerPrint> tokens) {
-        tokens.forEach(token -> {
-            token.setBlocked(true);
-            refreshTokenRepo.save(token);
-        });
-    }
+//    private void blockAllAccessTokens(List<AccessToken> tokens) {
+//        tokens.forEach(token -> {
+//            token.setBlocked(true);
+//            accessTokenRepo.save(token);
+//        });
+//    }
+//
+//    private void blockAllRefreshTokens(List<FingerPrint> tokens) {
+//        tokens.forEach(token -> {
+//            token.setBlocked(true);
+//            refreshTokenRepo.save(token);
+//        });
+//    }
 
     @Override
     public void revokeAllTokens() {
@@ -271,12 +262,12 @@ public class AuthServiceImpl implements AuthService {
 
         userRepo.findByUsername(username).ifPresent(user -> {
             // blocking all other access tokens
-            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlocked(user, false);
-            this.blockAllAccessTokens(accessTokens);
+//            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlocked(user, false);
+//            this.blockAllAccessTokens(accessTokens);
 
             // blocking all other refresh tokens
-            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false);
-            this.blockAllRefreshTokens(refreshTokens);
+//            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false);
+//            this.blockAllRefreshTokens(refreshTokens);
         });
     }
 
@@ -314,17 +305,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void blockAccessToken(String accessToken) {
-        accessTokenRepo.findByToken(accessToken).ifPresent(at -> {
-            at.setBlocked(true);
-            accessTokenRepo.save(at);
-        });
+//        accessTokenRepo.findByToken(accessToken).ifPresent(at -> {
+//            at.setBlocked(true);
+//            accessTokenRepo.save(at);
+//        });
     }
 
     private void blockRefreshToken(String refreshToken) {
-        refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
-            rt.setBlocked(true);
-            refreshTokenRepo.save(rt);
-        });
+//        refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
+//            rt.setBlocked(true);
+//            refreshTokenRepo.save(rt);
+//        });
     }
 
     private UserResponse mapToUserResponse(User user) {
