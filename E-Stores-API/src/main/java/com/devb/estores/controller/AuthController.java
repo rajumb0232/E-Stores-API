@@ -54,9 +54,12 @@ public class AuthController extends ResponseEntityExceptionHandler {
     @PostMapping("/login")
     public ResponseEntity<ResponseStructure<AuthResponse>> login(@RequestBody AuthRequest authRequest,
                                                                  @CookieValue(name = "rt", required = false) String refreshToken,
-                                                                 @CookieValue(name = "at", required = false) String accessToken) {
+                                                                 @CookieValue(name = "at", required = false) String accessToken,
+                                                                 @RequestHeader(value = "sec-ch-ua", required = false) String secChUa,
+                                                                 @RequestHeader(value = "sec-ch-ua-platform", required = false) String secChUaPlatform,
+                                                                 @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile) {
         AuthResponse response = authService.login(authRequest, refreshToken, accessToken);
-        HttpHeaders headers = authService.grantAccess(response);
+        HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile);
         return responseBuilder.success(HttpStatus.OK, headers, "Login Successful", response);
     }
 
@@ -72,9 +75,12 @@ public class AuthController extends ResponseEntityExceptionHandler {
     @PostMapping("/refresh")
     @PreAuthorize("hasAuthority('ADMIN') OR hasAuthority('SUPER_ADMIN') OR hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
     public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(@CookieValue(name = "rt", required = false) String refreshToken,
-                                                                        @CookieValue(name = "at", required = false) String accessToken) {
+                                                                        @CookieValue(name = "at", required = false) String accessToken,
+                                                                        @RequestHeader(value = "sec-ch-ua", required = false) String secChUa,
+                                                                        @RequestHeader(value = "sec-ch-ua-platform", required = false) String secChUaPlatform,
+                                                                        @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile) {
         AuthResponse response = authService.refreshLogin(refreshToken, accessToken);
-        HttpHeaders headers = authService.grantAccess(response);
+        HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile);
         return responseBuilder.success(HttpStatus.OK, headers, "Access Refreshed Successfully", response);
     }
 

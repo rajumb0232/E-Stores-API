@@ -14,6 +14,7 @@ import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Value;
@@ -148,14 +149,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public HttpHeaders grantAccess(AuthResponse authResponse) {
+    public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile) {
         HttpHeaders headers = new HttpHeaders();
 
+        /* Finding the start and end position of the browser name
+         * */
+        int start = secChUa.indexOf('"') + 1;
+        int end = secChUa.indexOf("\"", start);
+        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), secChUa.substring(start, end), secChUaPlatform, secChUaMobile, "");
+
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)
-            generateAccessToken(authResponse.getUsername(), authResponse.getRoles(), headers);
+            generateAccessToken(authResponse.getUsername(), claims, headers);
 
         if (authResponse.getRefreshExpiration() == refreshTokenExpirySeconds)
-            generateRefreshToken(authResponse.getUsername(), authResponse.getRoles(), headers);
+            generateRefreshToken(authResponse.getUsername(), claims, headers);
 
         return headers;
     }
@@ -164,13 +171,14 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse refreshLogin(String refreshToken, String accessToken) {
         if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
-//        String username = jwtService.getUsername(refreshToken);
-//        Date refreshExpiration = jwtService.getExpiry(refreshToken);
-//        Date refreshIssuedAt = jwtService.getIssuedAt(refreshToken);
+        Claims claims = jwtService.extractClaims(refreshToken);
+        String username = jwtService.getUsername(claims);
+        Date refreshExpiration = jwtService.getExpiry(claims);
+        Date refreshIssuedAt = jwtService.getIssuedAt(claims);
         Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
 
-//        User user = userRepo.findByUsername(username)
-//                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
 
         /*Calculating new Access Expiration -
         Updates new time if the access token is valid, else sets default access time
@@ -185,19 +193,18 @@ public class AuthServiceImpl implements AuthService {
         else, the evaluatedRefreshExpiration will be the leftover time for expiration
          */
         long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
-//        if (!this.isNewRefreshRequired(refreshIssuedAt)) {
-//            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshExpiration);
-//            this.blockRefreshToken(refreshToken);
-//        }
-//
-//        return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
-        return null;
+        if (!this.isNewRefreshRequired(refreshIssuedAt)) {
+            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshExpiration);
+            // should drop old token session ID used in the current token
+        }
+
+        return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
     }
 
     private Date getAccessExpiration(String token) {
         try {
-//            return jwtService.getExpiry(token);
-            return null;
+            Claims claims = jwtService.extractClaims(token);
+            return jwtService.getExpiry(claims);
         } catch (JwtException ex) {
             return null;
         }
@@ -213,8 +220,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(String refreshToken, String accessToken) {
-        blockAccessToken(accessToken);
-        blockRefreshToken(refreshToken);
+        // should drop old token session IDs
     }
 
     @Override
@@ -231,90 +237,28 @@ public class AuthServiceImpl implements AuthService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         userRepo.findByUsername(username).ifPresent(user -> {
-            // blocking all other access tokens
-//            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, accessToken);
-//            this.blockAllAccessTokens(accessTokens);
-
-            // blocking all other refresh tokens
-//            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlockedAndTokenNot(user, false, refreshToken);
-//            this.blockAllRefreshTokens(refreshTokens);
+            // should drop old token session IDs
         });
     }
-
-//    private void blockAllAccessTokens(List<AccessToken> tokens) {
-//        tokens.forEach(token -> {
-//            token.setBlocked(true);
-//            accessTokenRepo.save(token);
-//        });
-//    }
-//
-//    private void blockAllRefreshTokens(List<FingerPrint> tokens) {
-//        tokens.forEach(token -> {
-//            token.setBlocked(true);
-//            refreshTokenRepo.save(token);
-//        });
-//    }
 
     @Override
     public void revokeAllTokens() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         userRepo.findByUsername(username).ifPresent(user -> {
-            // blocking all other access tokens
-//            List<AccessToken> accessTokens = accessTokenRepo.findAllByUserAndIsBlocked(user, false);
-//            this.blockAllAccessTokens(accessTokens);
-
-            // blocking all other refresh tokens
-//            List<FingerPrint> refreshTokens = refreshTokenRepo.findALLByUserAndIsBlocked(user, false);
-//            this.blockAllRefreshTokens(refreshTokens);
+            // should drop old token session IDs
         });
     }
 
     /* ----------------------------------------------------------------------------------------------------------- */
-    private void generateAccessToken(String username, List<String> roles, HttpHeaders headers) {
-        //generating access token
-        String newAccessToken = jwtService.generateAccessToken(username, Map.of());
-
-        // adding cookies to the HttpHeaders
+    private void generateAccessToken(String username, Map<String, Object> claims, HttpHeaders headers) {
+        String newAccessToken = jwtService.generateAccessToken(username, claims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
-
-        // saving access token to the database
-        // will be caching tokens in future
-//        accessTokenRepo.save(AccessToken.builder()
-//                .isBlocked(false)
-//                .token(newAccessToken)
-//                .expiration(LocalDateTime.now().plusSeconds(accessTokenExpirySeconds))
-//                .user(user).build());
     }
 
-    private void generateRefreshToken(String username, List<String> roles, HttpHeaders headers) {
-        //generating access token
-        String newRefreshToken = jwtService.generateRefreshToken(username, Map.of());
-
-        // adding cookies to the HttpHeaders
+    private void generateRefreshToken(String username, Map<String, Object> claims, HttpHeaders headers) {
+        String newRefreshToken = jwtService.generateRefreshToken(username, claims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
-
-        // saving refresh token to the database
-        // will be caching tokens in future
-//        refreshTokenRepo.save(FingerPrint.builder()
-//                .isBlocked(false)
-//                .token(newRefreshToken)
-//                .expiration(LocalDateTime.now().plusSeconds(refreshTokenExpirySeconds))
-//                .user(user).build());
-    }
-
-    private void blockAccessToken(String accessToken) {
-//        accessTokenRepo.findByToken(accessToken).ifPresent(at -> {
-//            at.setBlocked(true);
-//            accessTokenRepo.save(at);
-//        });
-    }
-
-    private void blockRefreshToken(String refreshToken) {
-//        refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
-//            rt.setBlocked(true);
-//            refreshTokenRepo.save(rt);
-//        });
     }
 
     private UserResponse mapToUserResponse(User user) {
