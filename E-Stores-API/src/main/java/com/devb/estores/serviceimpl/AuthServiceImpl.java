@@ -27,10 +27,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -167,13 +164,13 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse refreshLogin(String refreshToken, String accessToken) {
         if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
-        String username = jwtService.extractUsername(refreshToken);
-        Date refreshExpiration = jwtService.extractExpiry(refreshToken);
-        Date refreshIssuedAt = jwtService.extractIssuedAt(refreshToken);
+//        String username = jwtService.getUsername(refreshToken);
+//        Date refreshExpiration = jwtService.getExpiry(refreshToken);
+//        Date refreshIssuedAt = jwtService.getIssuedAt(refreshToken);
         Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
 
-        User user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+//        User user = userRepo.findByUsername(username)
+//                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
 
         /*Calculating new Access Expiration -
         Updates new time if the access token is valid, else sets default access time
@@ -188,17 +185,19 @@ public class AuthServiceImpl implements AuthService {
         else, the evaluatedRefreshExpiration will be the leftover time for expiration
          */
         long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
-        if (!this.isNewRefreshRequired(refreshIssuedAt)) {
-            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshExpiration);
-            this.blockRefreshToken(refreshToken);
-        }
-
-        return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
+//        if (!this.isNewRefreshRequired(refreshIssuedAt)) {
+//            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshExpiration);
+//            this.blockRefreshToken(refreshToken);
+//        }
+//
+//        return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
+        return null;
     }
 
     private Date getAccessExpiration(String token) {
         try {
-            return jwtService.extractExpiry(token);
+//            return jwtService.getExpiry(token);
+            return null;
         } catch (JwtException ex) {
             return null;
         }
@@ -274,7 +273,7 @@ public class AuthServiceImpl implements AuthService {
     /* ----------------------------------------------------------------------------------------------------------- */
     private void generateAccessToken(String username, List<String> roles, HttpHeaders headers) {
         //generating access token
-        String newAccessToken = jwtService.generateAccessToken(username, roles.toString());
+        String newAccessToken = jwtService.generateAccessToken(username, Map.of());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
@@ -290,7 +289,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void generateRefreshToken(String username, List<String> roles, HttpHeaders headers) {
         //generating access token
-        String newRefreshToken = jwtService.generateRefreshToken(username, roles.toString());
+        String newRefreshToken = jwtService.generateRefreshToken(username, Map.of());
 
         // adding cookies to the HttpHeaders
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));

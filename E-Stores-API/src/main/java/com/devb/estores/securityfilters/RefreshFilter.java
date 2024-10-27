@@ -31,10 +31,10 @@ public class RefreshFilter extends OncePerRequestFilter {
 
         try {
             log.info("Extracting credentials...");
-            String username = jwtService.extractUsername(rt);
-            String roles = jwtService.extractUserRoles(rt);
-
-            FilterHelper.setAuthentication(username, roles, request);
+//            String username = jwtService.getUsername(rt);
+//            String roles = jwtService.getUserRoles(rt);
+//
+//            FilterHelper.setAuthentication(username, roles, request);
             log.info("JWT Authentication Successful");
 
         } catch (ExpiredJwtException ex) {

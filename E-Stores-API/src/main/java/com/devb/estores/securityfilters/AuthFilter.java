@@ -33,10 +33,10 @@ public class AuthFilter extends OncePerRequestFilter {
 
             log.info("Extracting credentials...");
 
-            String username = jwtService.extractUsername(accessToken);
-            String roles = jwtService.extractUserRoles(accessToken);
-
-            FilterHelper.setAuthentication(username, roles, request);
+//            String username = jwtService.getUsername(accessToken);
+//            String roles = jwtService.getUserRoles(accessToken);
+//
+//            FilterHelper.setAuthentication(username, roles, request);
             log.info("Authentication Successful");
 
             filterChain.doFilter(request, response);

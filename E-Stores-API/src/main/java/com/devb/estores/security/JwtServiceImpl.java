@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.lang.Maps;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,7 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.function.Function;
+import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -27,21 +27,36 @@ public class JwtServiceImpl implements JwtService {
     @Value("${token.expiry.refresh.seconds}")
     private long refreshTokenExpirySeconds;
 
-    public static final String CLAIM_ROLES = "roles";
+    private static final String CLAIM_ROLES = "roles";
+    private static final String CLAIM_BROWSER_NAME = "browser";
+    private static final String CLAIM_SEC_CH_UA_PLATFORM = "secChUaPlatform";
+    private static final String CLAIM_SEC_CH_UA_MOBILE = "secChUaMobile";
+    private static final String CLAIM_TOKEN_SESSION_ID = "tsid";
 
-    public String generateAccessToken(String username, String roles) {
+    @Override
+    public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String tsid) {
+        return Map.of(
+                CLAIM_ROLES, roles,
+                CLAIM_BROWSER_NAME, browser,
+                CLAIM_SEC_CH_UA_PLATFORM, secChUaPlatform,
+                CLAIM_SEC_CH_UA_MOBILE, secChUaMobile,
+                CLAIM_TOKEN_SESSION_ID, tsid
+        );
+    }
+
+    public String generateAccessToken(String username, Map<String, Object> claims) {
         log.info("Generating Access Token...");
-        return createJwtToken(roles, username, accessTokenExpirySeconds * 1000L);
+        return createJwtToken(claims, username, accessTokenExpirySeconds * 1000L);
     }
 
-    public String generateRefreshToken(String username, String roles) {
+    public String generateRefreshToken(String username, Map<String, Object> claims) {
         log.info("Generating Refresh Token...");
-        return createJwtToken(roles, username, refreshTokenExpirySeconds * 1000L);
+        return createJwtToken(claims, username, refreshTokenExpirySeconds * 1000L);
     }
 
-    private String createJwtToken(String roles, String username, long expiryDuration) {
+    private String createJwtToken(Map<String, Object> claims, String username, long expiryDuration) {
         return Jwts.builder()
-                .setClaims(Maps.of(CLAIM_ROLES, roles).build())
+                .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date((System.currentTimeMillis() + expiryDuration)))
@@ -55,36 +70,52 @@ public class JwtServiceImpl implements JwtService {
 
     // parsing JWT
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    @Override
+    public Claims extractClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignatureKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    public String getUsername(Claims claims) {
+        return claims.getSubject();
     }
 
     @Override
-    public String extractUserRoles(String token) {
-        return parseClaims(token).get(CLAIM_ROLES, String.class);
+    public List getUserRoles(Claims claims) {
+        return claims.get(CLAIM_ROLES, List.class);
     }
 
     @Override
-    public Date extractExpiry(String token){
-        return extractClaim(token, Claims::getExpiration);
+    public Date getExpiry(Claims claims){
+        return claims.getExpiration();
     }
 
     @Override
-    public Date extractIssuedAt(String token) {
-        return extractClaim(token, Claims::getIssuedAt);
+    public Date getIssuedAt(Claims claims) {
+        return claims.getIssuedAt();
     }
 
-    private <R> R extractClaim(String token, Function<Claims, R> claimResolver) {
-        return claimResolver.apply(parseClaims(token));
+    @Override
+    public String getBrowserName(Claims claims) {
+        return claims.get(CLAIM_BROWSER_NAME, String.class);
     }
 
-    private Claims parseClaims(String token) {
-            return Jwts.parserBuilder()
-                    .setSigningKey(getSignatureKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+    @Override
+    public String getSecChUaPlatform(Claims claims) {
+        return claims.get(CLAIM_SEC_CH_UA_PLATFORM, String.class);
     }
 
+    @Override
+    public String getSecChUaMobile(Claims claims) {
+        return claims.get(CLAIM_SEC_CH_UA_MOBILE, String.class);
+    }
+
+    @Override
+    public String getTsid(Claims claims) {
+        return claims.get(CLAIM_TOKEN_SESSION_ID, String.class);
+    }
 
 }
