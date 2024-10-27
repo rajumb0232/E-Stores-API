@@ -185,7 +185,7 @@ public class AuthServiceImpl implements AuthService {
           */
         long evaluatedAccessExpiration = accessTokenExpirySeconds;
         if (accessExpiration != null) {
-            evaluatedAccessExpiration = this.getLeftOverSeconds(accessExpiration);
+            evaluatedAccessExpiration = this.getLeftOverSeconds(accessTokenExpirySeconds, accessExpiration);
         }
 
         /* Validating if the refresh token was issued before 24 hours.
@@ -194,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
          */
         long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
         if (!this.isNewRefreshRequired(refreshIssuedAt)) {
-            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshExpiration);
+            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshTokenExpirySeconds, refreshExpiration);
             // should drop old token session ID used in the current token
         }
 
@@ -210,8 +210,8 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private long getLeftOverSeconds(Date tokenExpiration) {
-        return refreshTokenExpirySeconds - ((new Date().getTime() - tokenExpiration.getTime()) / 1000);
+    private long getLeftOverSeconds(long expiryDuration, Date tokenExpiration) {
+        return expiryDuration - ((new Date().getTime() - tokenExpiration.getTime()) / 1000);
     }
 
     private boolean isNewRefreshRequired(Date issuedAt) {
