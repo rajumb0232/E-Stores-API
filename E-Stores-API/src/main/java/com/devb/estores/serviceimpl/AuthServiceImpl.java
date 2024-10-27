@@ -157,7 +157,7 @@ public class AuthServiceImpl implements AuthService {
         int start = secChUa.indexOf('"') + 1;
         int end = secChUa.indexOf("\"", start);
         String browserName = Optional.of(secChUa).map(chUa -> chUa.substring(start, end)).orElse(null);
-        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), browserName, secChUaPlatform, secChUaMobile, "", );
+        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), browserName, secChUaPlatform, secChUaMobile, "", userAgent);
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)
             generateAccessToken(authResponse.getUsername(), claims, headers);
