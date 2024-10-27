@@ -15,7 +15,6 @@ import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,14 +149,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile) {
+    public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
 
         /* Finding the start and end position of the browser name
          * */
         int start = secChUa.indexOf('"') + 1;
         int end = secChUa.indexOf("\"", start);
-        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), secChUa.substring(start, end), secChUaPlatform, secChUaMobile, "");
+        String browserName = Optional.of(secChUa).map(chUa -> chUa.substring(start, end)).orElse(null);
+        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), browserName, secChUaPlatform, secChUaMobile, "", );
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)
             generateAccessToken(authResponse.getUsername(), claims, headers);

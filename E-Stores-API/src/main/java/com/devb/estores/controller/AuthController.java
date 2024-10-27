@@ -57,9 +57,10 @@ public class AuthController extends ResponseEntityExceptionHandler {
                                                                  @CookieValue(name = "at", required = false) String accessToken,
                                                                  @RequestHeader(value = "sec-ch-ua", required = false) String secChUa,
                                                                  @RequestHeader(value = "sec-ch-ua-platform", required = false) String secChUaPlatform,
-                                                                 @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile) {
+                                                                 @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile,
+                                                                 @RequestHeader(value = "User-Agent", required = false) String userAgent) {
         AuthResponse response = authService.login(authRequest, refreshToken, accessToken);
-        HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile);
+        HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile, userAgent);
         return responseBuilder.success(HttpStatus.OK, headers, "Login Successful", response);
     }
 
@@ -78,9 +79,10 @@ public class AuthController extends ResponseEntityExceptionHandler {
                                                                         @CookieValue(name = "at", required = false) String accessToken,
                                                                         @RequestHeader(value = "sec-ch-ua", required = false) String secChUa,
                                                                         @RequestHeader(value = "sec-ch-ua-platform", required = false) String secChUaPlatform,
-                                                                        @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile) {
+                                                                        @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile,
+                                                                        @RequestHeader(value = "User-Agent", required = false) String userAgent) {
         AuthResponse response = authService.refreshLogin(refreshToken, accessToken);
-        HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile);
+        HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile, userAgent);
         return responseBuilder.success(HttpStatus.OK, headers, "Access Refreshed Successfully", response);
     }
 

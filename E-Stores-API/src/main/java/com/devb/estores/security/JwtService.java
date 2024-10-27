@@ -8,7 +8,7 @@ import java.util.Map;
 
 public interface JwtService {
 
-    Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String tsid);
+    Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String tsid, String userAgent);
 
     String generateAccessToken(String username, Map<String, Object> claims);
 

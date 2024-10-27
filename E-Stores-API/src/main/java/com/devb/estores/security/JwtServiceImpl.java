@@ -32,15 +32,17 @@ public class JwtServiceImpl implements JwtService {
     private static final String CLAIM_SEC_CH_UA_PLATFORM = "secChUaPlatform";
     private static final String CLAIM_SEC_CH_UA_MOBILE = "secChUaMobile";
     private static final String CLAIM_TOKEN_SESSION_ID = "tsid";
+    private static final String CLAIM_USER_AGENT = "userAgent";
 
     @Override
-    public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String tsid) {
+    public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String tsid, String userAgent) {
         return Map.of(
                 CLAIM_ROLES, roles,
                 CLAIM_BROWSER_NAME, browser,
                 CLAIM_SEC_CH_UA_PLATFORM, secChUaPlatform,
                 CLAIM_SEC_CH_UA_MOBILE, secChUaMobile,
-                CLAIM_TOKEN_SESSION_ID, tsid
+                CLAIM_TOKEN_SESSION_ID, tsid,
+                CLAIM_USER_AGENT, userAgent
         );
     }
 
