@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,16 +36,20 @@ public class JwtServiceImpl implements JwtService {
     private static final String CLAIM_USER_AGENT = "userAgent";
 
     @Override
-    public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String tsid, String userAgent) {
-        return Map.of(
-                CLAIM_ROLES, roles,
-                CLAIM_BROWSER_NAME, browser,
-                CLAIM_SEC_CH_UA_PLATFORM, secChUaPlatform,
-                CLAIM_SEC_CH_UA_MOBILE, secChUaMobile,
-                CLAIM_TOKEN_SESSION_ID, tsid,
-                CLAIM_USER_AGENT, userAgent
-        );
+    public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform,
+                                              String secChUaMobile, String tsid, String userAgent) {
+        Map<String, Object> claims = new HashMap<>();
+
+        if (roles != null) claims.put(CLAIM_ROLES, roles);
+        if (browser != null) claims.put(CLAIM_BROWSER_NAME, browser);
+        if (secChUaPlatform != null) claims.put(CLAIM_SEC_CH_UA_PLATFORM, secChUaPlatform);
+        if (secChUaMobile != null) claims.put(CLAIM_SEC_CH_UA_MOBILE, secChUaMobile);
+        if (tsid != null) claims.put(CLAIM_TOKEN_SESSION_ID, tsid);
+        if (userAgent != null) claims.put(CLAIM_USER_AGENT, userAgent);
+
+        return claims;
     }
+
 
     public String generateAccessToken(String username, Map<String, Object> claims) {
         log.info("Generating Access Token...");
@@ -86,7 +91,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public List getUserRoles(Claims claims) {
+    public List<String> getUserRoles(Claims claims) {
         return claims.get(CLAIM_ROLES, List.class);
     }
 
@@ -118,6 +123,11 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String getTsid(Claims claims) {
         return claims.get(CLAIM_TOKEN_SESSION_ID, String.class);
+    }
+
+    @Override
+    public String getUserAgent(Claims claims) {
+        return claims.get(CLAIM_USER_AGENT, String.class);
     }
 
 }

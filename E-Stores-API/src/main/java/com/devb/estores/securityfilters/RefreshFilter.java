@@ -32,7 +32,7 @@ public class RefreshFilter extends OncePerRequestFilter {
             log.info("Extracting credentials...");
             Claims claims = jwtService.extractClaims(rt);
             String username = jwtService.getUsername(claims);
-            List roles = jwtService.getUserRoles(claims);
+            List<String> roles = jwtService.getUserRoles(claims);
 
             FilterHelper.setAuthentication(username, roles, request);
             log.info("JWT Authentication Successful");

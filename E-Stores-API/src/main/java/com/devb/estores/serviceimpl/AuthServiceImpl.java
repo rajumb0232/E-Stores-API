@@ -154,9 +154,13 @@ public class AuthServiceImpl implements AuthService {
 
         /* Finding the start and end position of the browser name
          * */
-        int start = secChUa.indexOf('"') + 1;
-        int end = secChUa.indexOf("\"", start);
-        String browserName = Optional.of(secChUa).map(chUa -> chUa.substring(start, end)).orElse(null);
+        String browserName = null;
+        if(secChUa != null) {
+            int start = secChUa.indexOf('"') + 1;
+            int end = secChUa.indexOf("\"", start);
+            browserName = secChUa.substring(start, end);
+        }
+
         Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), browserName, secChUaPlatform, secChUaMobile, "", userAgent);
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)

@@ -34,7 +34,7 @@ public class AuthFilter extends OncePerRequestFilter {
 
             Claims claims = jwtService.extractClaims(accessToken);
             String username = jwtService.getUsername(claims);
-            List roles = jwtService.getUserRoles(claims);
+            List<String> roles = jwtService.getUserRoles(claims);
 
             FilterHelper.setAuthentication(username, roles, request);
             log.info("Authentication Successful");

@@ -18,7 +18,7 @@ public interface JwtService {
 
     String getUsername(Claims claims);
 
-    List getUserRoles(Claims claims);
+    List<String> getUserRoles(Claims claims);
 
     Date getExpiry(Claims claims);
 
@@ -31,4 +31,6 @@ public interface JwtService {
     String getSecChUaMobile(Claims claims);
 
     String getTsid(Claims claims);
+
+    String getUserAgent(Claims claims);
 }
