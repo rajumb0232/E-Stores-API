@@ -15,6 +15,7 @@ import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Value;
@@ -174,28 +175,20 @@ public class AuthServiceImpl implements AuthService {
         Claims claims = jwtService.extractClaims(refreshToken);
         String username = jwtService.getUsername(claims);
         Date refreshExpiration = jwtService.getExpiry(claims);
-        Date refreshIssuedAt = jwtService.getIssuedAt(claims);
         Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
 
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
 
-        /*Calculating new Access Expiration -
-        Updates new time if the access token is valid, else sets default access time
-          */
+        /* Calculating new Access and refresh Expiration if the access token is present,
+        if not present or not valid the accessExpiration stays null, in that case the default expiration
+        time will be used for the token.
+         */
         long evaluatedAccessExpiration = accessTokenExpirySeconds;
+        long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
         if (accessExpiration != null) {
             evaluatedAccessExpiration = this.getLeftOverSeconds(accessTokenExpirySeconds, accessExpiration);
-        }
-
-        /* Validating if the refresh token was issued before 24 hours.
-        If yes, the token is blocked and the evaluatedRefreshExpiration will be the default refresh expiration time
-        else, the evaluatedRefreshExpiration will be the leftover time for expiration
-         */
-        long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
-        if (!this.isNewRefreshRequired(refreshIssuedAt)) {
             evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshTokenExpirySeconds, refreshExpiration);
-            // should drop old token session ID used in the current token
         }
 
         return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
@@ -212,10 +205,6 @@ public class AuthServiceImpl implements AuthService {
 
     private long getLeftOverSeconds(long expiryDuration, Date tokenExpiration) {
         return expiryDuration - ((new Date().getTime() - tokenExpiration.getTime()) / 1000);
-    }
-
-    private boolean isNewRefreshRequired(Date issuedAt) {
-        return issuedAt.before(new Date()) && (issuedAt.getTime() - new Date().getTime()) > 24 * 60 * 60 * 1000;
     }
 
     @Override
