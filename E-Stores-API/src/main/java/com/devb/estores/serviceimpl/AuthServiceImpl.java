@@ -268,6 +268,25 @@ public class AuthServiceImpl implements AuthService {
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
     }
 
+    private enum TokenType {
+        ACCESS, REFRESH;
+    }
+
+    private String generateTokenSession(String username, String deviceId, TokenType tokenType) {
+        String sessionId = UUID.randomUUID().toString();
+
+        switch (tokenType) {
+            case ACCESS -> {
+                // cache sessionId for access expiration time
+            }
+            case REFRESH -> {
+                // cache sessionId for refresh expiration time
+            }
+        }
+
+        return sessionId;
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .userId(user.getUserId())
