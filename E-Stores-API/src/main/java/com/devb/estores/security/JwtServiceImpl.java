@@ -49,6 +49,11 @@ public class JwtServiceImpl implements JwtService {
         return claims;
     }
 
+    @Override
+    public Map<String, Object> setTokenSessionId(Map<String, Object> claims, String tokenSessionId) {
+        claims.put(CLAIM_TOKEN_SESSION_ID, tokenSessionId);
+        return claims;
+    }
 
     public String generateAccessToken(String username, Map<String, Object> claims) {
         log.info("Generating Access Token...");

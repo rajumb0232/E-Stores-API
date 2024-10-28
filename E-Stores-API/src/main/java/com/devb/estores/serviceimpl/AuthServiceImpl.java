@@ -12,6 +12,7 @@ import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.JwtService;
+import com.devb.estores.security.JwtServiceImpl;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
@@ -154,12 +155,7 @@ public class AuthServiceImpl implements AuthService {
     public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
         String newDeviceId = UUID.randomUUID().toString();
-        Map<String, Object> claims = jwtService.generateClaims(
-                authResponse.getRoles(),
-                this.extractBrowserName(secChUa),
-                secChUaPlatform,
-                secChUaMobile,
-                userAgent);
+        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), this.extractBrowserName(secChUa), secChUaPlatform, secChUaMobile, userAgent);
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds) {
             generateAccessToken(authResponse.getUsername(), claims, newDeviceId, headers);
@@ -259,12 +255,16 @@ public class AuthServiceImpl implements AuthService {
 
     /* ----------------------------------------------------------------------------------------------------------- */
     private void generateAccessToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
-        String newAccessToken = jwtService.generateAccessToken(username, claims);
+        // Adding token session ID as a claim to the list of claims
+        Map<String, Object> copyClaims = jwtService.setTokenSessionId(claims, this.generateTokenSession(username, deviceId, TokenType.ACCESS));
+        String newAccessToken = jwtService.generateAccessToken(username, copyClaims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
     }
 
     private void generateRefreshToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
-        String newRefreshToken = jwtService.generateRefreshToken(username, claims);
+        // Adding token session ID as a claim to the list of claims
+        Map<String, Object> copyClaims = jwtService.setTokenSessionId(claims, this.generateTokenSession(username, deviceId, TokenType.REFRESH));
+        String newRefreshToken = jwtService.generateRefreshToken(username, copyClaims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
     }
 

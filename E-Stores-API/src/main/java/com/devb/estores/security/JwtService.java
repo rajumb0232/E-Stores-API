@@ -10,6 +10,8 @@ public interface JwtService {
 
     Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform, String secChUaMobile, String userAgent);
 
+    Map<String, Object> setTokenSessionId(Map<String, Object> claims, String tokenSessionId);
+
     String generateAccessToken(String username, Map<String, Object> claims);
 
     String generateRefreshToken(String username, Map<String, Object> claims);
