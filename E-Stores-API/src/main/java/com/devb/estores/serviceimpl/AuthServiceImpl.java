@@ -152,16 +152,13 @@ public class AuthServiceImpl implements AuthService {
     public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
 
-        /* Finding the start and end position of the browser name
-         * */
-        String browserName = null;
-        if(secChUa != null) {
-            int start = secChUa.indexOf('"') + 1;
-            int end = secChUa.indexOf("\"", start);
-            browserName = secChUa.substring(start, end);
-        }
-
-        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), browserName, secChUaPlatform, secChUaMobile, "", userAgent);
+        Map<String, Object> claims = jwtService.generateClaims(
+                authResponse.getRoles(),
+                this.extractBrowserName(secChUa),
+                secChUaPlatform,
+                secChUaMobile,
+                "",
+                userAgent);
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)
             generateAccessToken(authResponse.getUsername(), claims, headers);
@@ -170,6 +167,18 @@ public class AuthServiceImpl implements AuthService {
             generateRefreshToken(authResponse.getUsername(), claims, headers);
 
         return headers;
+    }
+
+    /**
+     * Helps in extracting the browser name from the given secChUa
+     */
+    private String extractBrowserName(String secChUa) {
+        if (secChUa != null) {
+            int start = secChUa.indexOf('"') + 1;
+            int end = secChUa.indexOf("\"", start);
+            return secChUa.substring(start, end);
+        } else
+            return null;
     }
 
     @Override
