@@ -20,13 +20,18 @@ import java.util.Map;
 @Service
 public class JwtServiceImpl implements JwtService {
 
-    @Value("${myapp.jwt.secret}")
-    private String secret;
+    private final String secret;
+    private final long accessTokenExpirySeconds;
+    private final long refreshTokenExpirySeconds;
 
-    @Value("${token.expiry.access.seconds}")
-    private long accessTokenExpirySeconds;
-    @Value("${token.expiry.refresh.seconds}")
-    private long refreshTokenExpirySeconds;
+    public JwtServiceImpl(
+            @Value("${myapp.jwt.secret}") String secret,
+            @Value("${token.expiry.access.seconds}") long accessTokenExpirySeconds,
+            @Value("${token.expiry.refresh.seconds}") long refreshTokenExpirySeconds) {
+        this.secret = secret;
+        this.accessTokenExpirySeconds = accessTokenExpirySeconds;
+        this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
+    }
 
     public static final String CLAIM_ROLES = "roles";
     public static final String CLAIM_BROWSER_NAME = "browser";
