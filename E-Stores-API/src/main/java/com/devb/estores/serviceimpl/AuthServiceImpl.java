@@ -157,7 +157,6 @@ public class AuthServiceImpl implements AuthService {
                 this.extractBrowserName(secChUa),
                 secChUaPlatform,
                 secChUaMobile,
-                "",
                 userAgent);
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)

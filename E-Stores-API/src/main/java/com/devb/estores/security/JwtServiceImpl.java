@@ -37,22 +37,16 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform,
-                                              String secChUaMobile, String tsid, String userAgent) {
-        if (roles == null) roles = List.of();
-        if (browser == null) browser= "";
-        if (secChUaPlatform == null) secChUaPlatform = "";
-        if (secChUaMobile == null) secChUaMobile = "";
-        if (tsid == null) tsid = "";
-        if (userAgent == null) userAgent = "";
+                                              String secChUaMobile, String userAgent) {
 
-        return Map.of(
-                CLAIM_ROLES, roles,
-                CLAIM_BROWSER_NAME, browser,
-                CLAIM_SEC_CH_UA_PLATFORM, secChUaPlatform,
-                CLAIM_SEC_CH_UA_MOBILE, secChUaMobile,
-                CLAIM_TOKEN_SESSION_ID, tsid,
-                CLAIM_USER_AGENT, userAgent
-        );
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_ROLES, (roles != null) ? roles : List.of());
+        claims.put(CLAIM_BROWSER_NAME, (browser != null) ? browser : "");
+        claims.put(CLAIM_SEC_CH_UA_PLATFORM, (secChUaPlatform != null) ? secChUaPlatform : "");
+        claims.put(CLAIM_SEC_CH_UA_MOBILE, (secChUaMobile != null) ? secChUaMobile : "");
+        claims.put(CLAIM_USER_AGENT, (userAgent != null) ? userAgent : "");
+
+        return claims;
     }
 
 
