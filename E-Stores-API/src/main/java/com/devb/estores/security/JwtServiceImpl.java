@@ -28,12 +28,12 @@ public class JwtServiceImpl implements JwtService {
     @Value("${token.expiry.refresh.seconds}")
     private long refreshTokenExpirySeconds;
 
-    private static final String CLAIM_ROLES = "roles";
-    private static final String CLAIM_BROWSER_NAME = "browser";
-    private static final String CLAIM_SEC_CH_UA_PLATFORM = "secChUaPlatform";
-    private static final String CLAIM_SEC_CH_UA_MOBILE = "secChUaMobile";
-    private static final String CLAIM_TOKEN_SESSION_ID = "tsid";
-    private static final String CLAIM_USER_AGENT = "userAgent";
+    public static final String CLAIM_ROLES = "roles";
+    public static final String CLAIM_BROWSER_NAME = "browser";
+    public static final String CLAIM_SEC_CH_UA_PLATFORM = "secChUaPlatform";
+    public static final String CLAIM_SEC_CH_UA_MOBILE = "secChUaMobile";
+    public static final String CLAIM_TOKEN_SESSION_ID = "tsid";
+    public static final String CLAIM_USER_AGENT = "userAgent";
 
     @Override
     public Map<String, Object> generateClaims(List<String> roles, String browser, String secChUaPlatform,
