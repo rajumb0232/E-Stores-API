@@ -17,6 +17,7 @@ import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+@Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -151,7 +153,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
-
+        String newDeviceId = UUID.randomUUID().toString();
         Map<String, Object> claims = jwtService.generateClaims(
                 authResponse.getRoles(),
                 this.extractBrowserName(secChUa),
@@ -159,11 +161,15 @@ public class AuthServiceImpl implements AuthService {
                 secChUaMobile,
                 userAgent);
 
-        if (authResponse.getAccessExpiration() == accessTokenExpirySeconds)
-            generateAccessToken(authResponse.getUsername(), claims, headers);
+        if (authResponse.getAccessExpiration() == accessTokenExpirySeconds) {
+            generateAccessToken(authResponse.getUsername(), claims, newDeviceId, headers);
+            // Adding new Device Identifier if issuing a new Access Token
+            log.info("Generating new device Identifier...");
+            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, accessTokenExpirySeconds));
+        }
 
         if (authResponse.getRefreshExpiration() == refreshTokenExpirySeconds)
-            generateRefreshToken(authResponse.getUsername(), claims, headers);
+            generateRefreshToken(authResponse.getUsername(), claims, newDeviceId, headers);
 
         return headers;
     }
@@ -252,12 +258,12 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /* ----------------------------------------------------------------------------------------------------------- */
-    private void generateAccessToken(String username, Map<String, Object> claims, HttpHeaders headers) {
+    private void generateAccessToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
         String newAccessToken = jwtService.generateAccessToken(username, claims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
     }
 
-    private void generateRefreshToken(String username, Map<String, Object> claims, HttpHeaders headers) {
+    private void generateRefreshToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
         String newRefreshToken = jwtService.generateRefreshToken(username, claims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
     }
