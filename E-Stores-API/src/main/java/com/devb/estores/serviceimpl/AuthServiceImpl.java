@@ -11,6 +11,7 @@ import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
+import com.devb.estores.security.JwtModel;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
@@ -154,19 +155,48 @@ public class AuthServiceImpl implements AuthService {
     public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
         String newDeviceId = UUID.randomUUID().toString();
-        Map<String, Object> claims = jwtService.generateClaims(authResponse.getRoles(), this.extractBrowserName(secChUa), secChUaPlatform, secChUaMobile, userAgent);
+        String browser = this.extractBrowserName(secChUa);
 
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds) {
-            generateAccessToken(authResponse.getUsername(), claims, newDeviceId, headers);
-            // Adding new Device Identifier if issuing a new Access Token
-            log.info("Generating new device Identifier...");
+
+            generateToken(authResponse.getUsername(), authResponse.getRoles(),
+                    browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
+                    headers, TokenType.ACCESS, accessTokenExpirySeconds * 1000L);
+
+            log.info("Generating new device identifier...");
             headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, accessTokenExpirySeconds));
         }
 
-        if (authResponse.getRefreshExpiration() == refreshTokenExpirySeconds)
-            generateRefreshToken(authResponse.getUsername(), claims, newDeviceId, headers);
+        if (authResponse.getRefreshExpiration() == refreshTokenExpirySeconds) {
+            generateToken(authResponse.getUsername(), authResponse.getRoles(),
+                    browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
+                    headers, TokenType.REFRESH, refreshTokenExpirySeconds * 1000L);
+        }
 
         return headers;
+    }
+
+    private void generateToken(String username, List<String> roles, String browserName,
+                               String secChUaMobile, String secChUaPlatform, String userAgent,
+                               String deviceId, HttpHeaders headers, TokenType tokenType, long expirationInMillis) {
+
+        JwtModel jwtModel = JwtModel.create()
+                .setSubject(username)
+                .roles(roles)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expirationInMillis))
+                .browserName(browserName)
+                .secChaUaMobile(secChUaMobile)
+                .secChaUaPlatform(secChUaPlatform)
+                .userAgent(userAgent)
+                .jwtId(generateJwtId(username, deviceId, tokenType))
+                .build();
+
+        String token = (tokenType == TokenType.ACCESS)
+                ? jwtService.generateAccessToken(jwtModel)
+                : jwtService.generateRefreshToken(jwtModel);
+
+        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure(tokenType == TokenType.ACCESS ? "at" : "rt", token, expirationInMillis/1000));
     }
 
     /**
@@ -179,6 +209,25 @@ public class AuthServiceImpl implements AuthService {
             return secChUa.substring(start, end);
         } else
             return null;
+    }
+
+    private enum TokenType {
+        ACCESS, REFRESH;
+    }
+
+    private String generateJwtId(String username, String deviceId, TokenType tokenType) {
+        String sessionId = UUID.randomUUID().toString();
+
+        switch (tokenType) {
+            case ACCESS -> {
+                // cache jti for access expiration time in accessTokenCache
+            }
+            case REFRESH -> {
+                // cache jti for refresh expiration time in refreshTokenCache
+            }
+        }
+
+        return sessionId;
     }
 
     @Override
@@ -250,40 +299,6 @@ public class AuthServiceImpl implements AuthService {
         userRepo.findByUsername(username).ifPresent(user -> {
             // should drop old token session IDs
         });
-    }
-
-    /* ----------------------------------------------------------------------------------------------------------- */
-    private void generateAccessToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
-        // Adding token session ID as a claim to the list of claims
-        Map<String, Object> copyClaims = jwtService.setJwtId(claims, this.generateJwtId(username, deviceId, TokenType.ACCESS));
-        String newAccessToken = jwtService.generateAccessToken(username, copyClaims);
-        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
-    }
-
-    private void generateRefreshToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
-        // Adding token session ID as a claim to the list of claims
-        Map<String, Object> copyClaims = jwtService.setJwtId(claims, this.generateJwtId(username, deviceId, TokenType.REFRESH));
-        String newRefreshToken = jwtService.generateRefreshToken(username, copyClaims);
-        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
-    }
-
-    private enum TokenType {
-        ACCESS, REFRESH;
-    }
-
-    private String generateJwtId(String username, String deviceId, TokenType tokenType) {
-        String sessionId = UUID.randomUUID().toString();
-
-        switch (tokenType) {
-            case ACCESS -> {
-                // cache sessionId for access expiration time
-            }
-            case REFRESH -> {
-                // cache sessionId for refresh expiration time
-            }
-        }
-
-        return sessionId;
     }
 
     private UserResponse mapToUserResponse(User user) {
