@@ -12,7 +12,6 @@ import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.JwtService;
-import com.devb.estores.security.JwtServiceImpl;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
@@ -256,14 +255,14 @@ public class AuthServiceImpl implements AuthService {
     /* ----------------------------------------------------------------------------------------------------------- */
     private void generateAccessToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
         // Adding token session ID as a claim to the list of claims
-        Map<String, Object> copyClaims = jwtService.setTokenSessionId(claims, this.generateTokenSession(username, deviceId, TokenType.ACCESS));
+        Map<String, Object> copyClaims = jwtService.setJwtId(claims, this.generateJwtId(username, deviceId, TokenType.ACCESS));
         String newAccessToken = jwtService.generateAccessToken(username, copyClaims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
     }
 
     private void generateRefreshToken(String username, Map<String, Object> claims, String deviceId, HttpHeaders headers) {
         // Adding token session ID as a claim to the list of claims
-        Map<String, Object> copyClaims = jwtService.setTokenSessionId(claims, this.generateTokenSession(username, deviceId, TokenType.REFRESH));
+        Map<String, Object> copyClaims = jwtService.setJwtId(claims, this.generateJwtId(username, deviceId, TokenType.REFRESH));
         String newRefreshToken = jwtService.generateRefreshToken(username, copyClaims);
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
     }
@@ -272,7 +271,7 @@ public class AuthServiceImpl implements AuthService {
         ACCESS, REFRESH;
     }
 
-    private String generateTokenSession(String username, String deviceId, TokenType tokenType) {
+    private String generateJwtId(String username, String deviceId, TokenType tokenType) {
         String sessionId = UUID.randomUUID().toString();
 
         switch (tokenType) {

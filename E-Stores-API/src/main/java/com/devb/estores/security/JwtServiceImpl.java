@@ -37,7 +37,7 @@ public class JwtServiceImpl implements JwtService {
     public static final String CLAIM_BROWSER_NAME = "browser";
     public static final String CLAIM_SEC_CH_UA_PLATFORM = "secChUaPlatform";
     public static final String CLAIM_SEC_CH_UA_MOBILE = "secChUaMobile";
-    public static final String CLAIM_TOKEN_SESSION_ID = "tsid";
+    public static final String CLAIM_JWT_ID = "jti";
     public static final String CLAIM_USER_AGENT = "userAgent";
 
     @Override
@@ -55,8 +55,8 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public Map<String, Object> setTokenSessionId(Map<String, Object> claims, String tokenSessionId) {
-        claims.put(CLAIM_TOKEN_SESSION_ID, tokenSessionId);
+    public Map<String, Object> setJwtId(Map<String, Object> claims, String tokenSessionId) {
+        claims.put(CLAIM_JWT_ID, tokenSessionId);
         return claims;
     }
 
@@ -130,8 +130,8 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String getTsid(Claims claims) {
-        return claims.get(CLAIM_TOKEN_SESSION_ID, String.class);
+    public String getJwtId(Claims claims) {
+        return claims.get(CLAIM_JWT_ID, String.class);
     }
 
     @Override
