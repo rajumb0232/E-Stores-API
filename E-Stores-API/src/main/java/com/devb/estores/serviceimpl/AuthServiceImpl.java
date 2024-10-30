@@ -157,34 +157,38 @@ public class AuthServiceImpl implements AuthService {
         String newDeviceId = UUID.randomUUID().toString();
         String browser = this.extractBrowserName(secChUa);
 
+        /* Generating Access Token, Refresh Token, and new Device Identifier if the access token is required.
+         * The Access Token is required when the expiration of authResponse is the default expire duration
+         * */
         if (authResponse.getAccessExpiration() == accessTokenExpirySeconds) {
 
             generateToken(authResponse.getUsername(), authResponse.getRoles(),
                     browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
-                    headers, TokenType.ACCESS, accessTokenExpirySeconds * 1000L);
+                    headers, TokenType.ACCESS);
 
             log.info("Generating new device identifier...");
             headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, accessTokenExpirySeconds));
-        }
 
-        if (authResponse.getRefreshExpiration() == refreshTokenExpirySeconds) {
+            /* Generating a new refresh Token whenever a new Access Token is used for Token Rotation mechanism.
+             * */
             generateToken(authResponse.getUsername(), authResponse.getRoles(),
                     browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
-                    headers, TokenType.REFRESH, refreshTokenExpirySeconds * 1000L);
+                    headers, TokenType.REFRESH);
         }
-
         return headers;
     }
 
     private void generateToken(String username, List<String> roles, String browserName,
                                String secChUaMobile, String secChUaPlatform, String userAgent,
-                               String deviceId, HttpHeaders headers, TokenType tokenType, long expirationInMillis) {
+                               String deviceId, HttpHeaders headers, TokenType tokenType) {
+
+        long expiration = (tokenType.equals(TokenType.ACCESS)) ? accessTokenExpirySeconds: refreshTokenExpirySeconds;
 
         TokenPayload tokenPayload = TokenPayload.create()
                 .setSubject(username)
                 .roles(roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationInMillis))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000L))
                 .browserName(browserName)
                 .secChaUaMobile(secChUaMobile)
                 .secChaUaPlatform(secChUaPlatform)
@@ -196,7 +200,7 @@ public class AuthServiceImpl implements AuthService {
                 ? jwtService.generateAccessToken(tokenPayload)
                 : jwtService.generateRefreshToken(tokenPayload);
 
-        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure(tokenType == TokenType.ACCESS ? "at" : "rt", token, expirationInMillis/1000));
+        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure(tokenType == TokenType.ACCESS ? "at" : "rt", token, expiration));
     }
 
     /**
