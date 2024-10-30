@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-public class JwtModel {
+public class TokenPayload {
     public static final String CLAIM_ROLES = "roles";
     public static final String CLAIM_BROWSER_NAME = "browser";
     public static final String CLAIM_SEC_CH_UA_PLATFORM = "secChUaPlatform";
@@ -83,14 +83,14 @@ public class JwtModel {
             return this;
         }
 
-        public JwtModel build() {
-            JwtModel jwtModel = new JwtModel();
-            jwtModel.claims = this.claims;
-            jwtModel.subject = this.subject;
-            jwtModel.issuedAt = this.issuedAt;
-            jwtModel.expiration = this.expiration;
+        public TokenPayload build() {
+            TokenPayload tokenPayload = new TokenPayload();
+            tokenPayload.claims = this.claims;
+            tokenPayload.subject = this.subject;
+            tokenPayload.issuedAt = this.issuedAt;
+            tokenPayload.expiration = this.expiration;
 
-            return jwtModel;
+            return tokenPayload;
         }
     }
 

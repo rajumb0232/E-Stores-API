@@ -11,7 +11,7 @@ import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
-import com.devb.estores.security.JwtModel;
+import com.devb.estores.security.TokenPayload;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
@@ -180,7 +180,7 @@ public class AuthServiceImpl implements AuthService {
                                String secChUaMobile, String secChUaPlatform, String userAgent,
                                String deviceId, HttpHeaders headers, TokenType tokenType, long expirationInMillis) {
 
-        JwtModel jwtModel = JwtModel.create()
+        TokenPayload tokenPayload = TokenPayload.create()
                 .setSubject(username)
                 .roles(roles)
                 .setIssuedAt(new Date())
@@ -193,8 +193,8 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         String token = (tokenType == TokenType.ACCESS)
-                ? jwtService.generateAccessToken(jwtModel)
-                : jwtService.generateRefreshToken(jwtModel);
+                ? jwtService.generateAccessToken(tokenPayload)
+                : jwtService.generateRefreshToken(tokenPayload);
 
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure(tokenType == TokenType.ACCESS ? "at" : "rt", token, expirationInMillis/1000));
     }

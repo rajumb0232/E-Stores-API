@@ -25,22 +25,22 @@ public class JwtService {
         this.secret = secret;
     }
 
-    public String generateAccessToken(JwtModel jwtModel) {
+    public String generateAccessToken(TokenPayload tokenPayload) {
         log.info("Generating Access Token...");
-        return createJwtToken(jwtModel);
+        return createJwtToken(tokenPayload);
     }
 
-    public String generateRefreshToken(JwtModel jwtModel) {
+    public String generateRefreshToken(TokenPayload tokenPayload) {
         log.info("Generating Refresh Token...");
-        return createJwtToken(jwtModel);
+        return createJwtToken(tokenPayload);
     }
 
-    private String createJwtToken(JwtModel jwtModel) {
+    private String createJwtToken(TokenPayload tokenPayload) {
         return Jwts.builder()
-                .setClaims(jwtModel.getClaims())
-                .setSubject(jwtModel.getSubject())
-                .setIssuedAt(jwtModel.getIssuedAt())
-                .setExpiration(jwtModel.getExpiration())
+                .setClaims(tokenPayload.getClaims())
+                .setSubject(tokenPayload.getSubject())
+                .setIssuedAt(tokenPayload.getIssuedAt())
+                .setExpiration(tokenPayload.getExpiration())
                 .signWith(getSignatureKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
@@ -64,7 +64,7 @@ public class JwtService {
     }
 
     public List<String> getUserRoles(Claims claims) {
-        return claims.get(JwtModel.CLAIM_ROLES, List.class);
+        return claims.get(TokenPayload.CLAIM_ROLES, List.class);
     }
 
     public Date getExpiry(Claims claims){
@@ -76,22 +76,22 @@ public class JwtService {
     }
 
     public String getBrowserName(Claims claims) {
-        return claims.get(JwtModel.CLAIM_BROWSER_NAME, String.class);
+        return claims.get(TokenPayload.CLAIM_BROWSER_NAME, String.class);
     }
 
     public String getSecChUaPlatform(Claims claims) {
-        return claims.get(JwtModel.CLAIM_SEC_CH_UA_PLATFORM, String.class);
+        return claims.get(TokenPayload.CLAIM_SEC_CH_UA_PLATFORM, String.class);
     }
 
     public String getSecChUaMobile(Claims claims) {
-        return claims.get(JwtModel.CLAIM_SEC_CH_UA_MOBILE, String.class);
+        return claims.get(TokenPayload.CLAIM_SEC_CH_UA_MOBILE, String.class);
     }
 
     public String getJwtId(Claims claims) {
-        return claims.get(JwtModel.CLAIM_JWT_ID, String.class);
+        return claims.get(TokenPayload.CLAIM_JWT_ID, String.class);
     }
 
     public String getUserAgent(Claims claims) {
-        return claims.get(JwtModel.CLAIM_USER_AGENT, String.class);
+        return claims.get(TokenPayload.CLAIM_USER_AGENT, String.class);
     }
 }
