@@ -5,30 +5,22 @@ import com.devb.estores.dto.MessageData;
 import com.devb.estores.dto.OtpModel;
 import com.devb.estores.enums.UserRole;
 import com.devb.estores.exceptions.*;
-import com.devb.estores.model.AccessToken;
-import com.devb.estores.model.RefreshToken;
 import com.devb.estores.model.User;
-import com.devb.estores.repository.AccessTokenRepo;
-import com.devb.estores.repository.RefreshTokenRepo;
 import com.devb.estores.repository.UserRepo;
 import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
+import com.devb.estores.security.TokenPayload;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.util.CookieManager;
-import com.devb.estores.util.ResponseStructure;
-import com.devb.estores.util.SimpleResponseStructure;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,18 +30,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
+@Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepo userRepo;
-    private final AccessTokenRepo accessTokenRepo;
-    private final RefreshTokenRepo refreshTokenRepo;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final CacheStore<OtpModel> otpCache;
@@ -58,20 +45,20 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final CookieManager cookieManager;
     private final Random random;
+    private final long accessTokenExpirySeconds;
+    private final long refreshTokenExpirySeconds;
 
     public AuthServiceImpl(UserRepo userRepo,
-                           AccessTokenRepo accessTokenRepo,
-                           RefreshTokenRepo refreshTokenRepo,
                            PasswordEncoder passwordEncoder,
-                           MailService mailService, CacheStore<OtpModel> otpCache,
-                           CacheStore<User> userCacheStore,
+                           MailService mailService,
+                           CacheStore<OtpModel> otpCache, CacheStore<User> userCacheStore,
                            JwtService jwtService,
                            AuthenticationManager authenticationManager,
                            CookieManager cookieManager,
-                           Random random) {
+                           Random random,
+                           @Value("${token.expiry.access.seconds}") long accessTokenExpirySeconds,
+                           @Value("${token.expiry.refresh.seconds}") long refreshTokenExpirySeconds) {
         this.userRepo = userRepo;
-        this.accessTokenRepo = accessTokenRepo;
-        this.refreshTokenRepo = refreshTokenRepo;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
         this.otpCache = otpCache;
@@ -80,17 +67,15 @@ public class AuthServiceImpl implements AuthService {
         this.authenticationManager = authenticationManager;
         this.cookieManager = cookieManager;
         this.random = random;
+        this.accessTokenExpirySeconds = accessTokenExpirySeconds;
+        this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
     }
-
-    @Value("${token.expiry.access.seconds}")
-    private long accessTokenExpirySeconds;
-    @Value("${token.expiry.refresh.seconds}")
-    private long refreshTokenExpirySeconds;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
+
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> registerUser(UserRequest userRequest, UserRole role) {
+    public String registerUser(UserRequest userRequest, UserRole role) {
         // validating if there is already a user with the given email in the request
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
@@ -108,19 +93,14 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             sendOTPToMailId(user, otp.getOtp());
-            return ResponseEntity
-                    .status(HttpStatus.ACCEPTED)
-                    .body(new ResponseStructure<UserResponse>()
-                            .setStatus(HttpStatus.ACCEPTED.value())
-                            .setMessage("user registration successful. Please check your email for OTP")
-                            .setData(mapToUserResponse(user)));
+            return "Verify Email using the OTP sent to " + user.getEmail();
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to verify the email ID");
         }
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<UserResponse>> verifyUserEmail(OtpModel otpModel) {
+    public UserResponse verifyUserEmail(OtpModel otpModel) {
         OtpModel otp = otpCache.get(otpModel.getEmail());
         User user = userCacheStore.get(otpModel.getEmail());
 
@@ -134,209 +114,194 @@ public class AuthServiceImpl implements AuthService {
         otpCache.remove(otpModel.getEmail());
         try {
             sendConfirmationMail(user);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(new ResponseStructure<UserResponse>()
-                            .setStatus(HttpStatus.OK.value())
-                            .setMessage("User registration successful")
-                            .setData(mapToUserResponse(user)));
+            return mapToUserResponse(user);
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to send confirmation mail");
         }
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, String refreshToken, String accessToken) {
-        // getting username
-        String username = authRequest.getEmail().split("@")[0];
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
+    public AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken) {
+        // Authenticating user
+        User user = this.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
+
+        return this.generateAuthResponse(user, accessTokenExpirySeconds, refreshTokenExpirySeconds);
+    }
+
+    private User authenticateUser(String email, String password) {
+        String username = email.split("@")[0];
+        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
         // validating if the user authentication is authenticated
-        if (auth.isAuthenticated()) return userRepo.findByUsername(username).map(user -> {
-            HttpHeaders headers = new HttpHeaders();
-            generateAccessToken(user, headers);
-            generateRefreshToken(user, headers);
-            return ResponseEntity.ok().headers(headers).body(new ResponseStructure<AuthResponse>()
-                    .setStatus(HttpStatus.OK.value())
-                    .setMessage("Login refreshed successfully")
-                    .setData(AuthResponse.builder()
-                            .userId(user.getUserId())
-                            .username(user.getUsername())
-                            .roles(user.getRoles().stream().map(UserRole::name).toList())
-                            .isAuthenticated(true)
-                            .accessExpiration(accessTokenExpirySeconds)
-                            .refreshExpiration(refreshTokenExpirySeconds)
-                            .build()));
-        }).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
-        else throw new BadCredentialsException("The given credentials are incorrect");
+        if (!auth.isAuthenticated())
+            throw new BadCredentialsException("The given credentials are incorrect");
+
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+    }
+
+    private AuthResponse generateAuthResponse(User user, long accessExpiryInSeconds, long refreshExpirySeconds) {
+        return AuthResponse.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .roles(user.getRoles().stream().map(UserRole::name).toList())
+                .isAuthenticated(true)
+                .accessExpiration(accessExpiryInSeconds)
+                .refreshExpiration(refreshExpirySeconds)
+                .build();
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<AuthResponse>> refreshLogin(String refreshToken, String accessToken) {
+    public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
+        HttpHeaders headers = new HttpHeaders();
+        String newDeviceId = UUID.randomUUID().toString();
+        String browser = this.extractBrowserName(secChUa);
+
+        /* Generating Access Token, Refresh Token, and new Device Identifier if the access token is required.
+         * The Access Token is required when the expiration of authResponse is the default expire duration
+         * */
+        if (authResponse.getAccessExpiration() == accessTokenExpirySeconds) {
+
+            generateToken(authResponse.getUsername(), authResponse.getRoles(),
+                    browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
+                    headers, TokenType.ACCESS);
+
+            log.info("Generating new device identifier...");
+            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, accessTokenExpirySeconds));
+
+            /* Generating a new refresh Token whenever a new Access Token is used for Token Rotation mechanism.
+             * */
+            generateToken(authResponse.getUsername(), authResponse.getRoles(),
+                    browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
+                    headers, TokenType.REFRESH);
+        }
+        return headers;
+    }
+
+    private void generateToken(String username, List<String> roles, String browserName,
+                               String secChUaMobile, String secChUaPlatform, String userAgent,
+                               String deviceId, HttpHeaders headers, TokenType tokenType) {
+
+        long expiration = (tokenType.equals(TokenType.ACCESS)) ? accessTokenExpirySeconds: refreshTokenExpirySeconds;
+
+        TokenPayload tokenPayload = TokenPayload.create()
+                .setSubject(username)
+                .roles(roles)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000L))
+                .browserName(browserName)
+                .secChaUaMobile(secChUaMobile)
+                .secChaUaPlatform(secChUaPlatform)
+                .userAgent(userAgent)
+                .jwtId(generateJwtId(username, deviceId, tokenType))
+                .build();
+
+        String token = (tokenType == TokenType.ACCESS)
+                ? jwtService.generateAccessToken(tokenPayload)
+                : jwtService.generateRefreshToken(tokenPayload);
+
+        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure(tokenType == TokenType.ACCESS ? "at" : "rt", token, expiration));
+    }
+
+    /**
+     * Helps in extracting the browser name from the given secChUa
+     */
+    private String extractBrowserName(String secChUa) {
+        if (secChUa != null) {
+            int start = secChUa.indexOf('"') + 1;
+            int end = secChUa.indexOf("\"", start);
+            return secChUa.substring(start, end);
+        } else
+            return null;
+    }
+
+    private enum TokenType {
+        ACCESS, REFRESH;
+    }
+
+    private String generateJwtId(String username, String deviceId, TokenType tokenType) {
+        String sessionId = UUID.randomUUID().toString();
+
+        switch (tokenType) {
+            case ACCESS -> {
+                // cache jti for access expiration time in accessTokenCache
+            }
+            case REFRESH -> {
+                // cache jti for refresh expiration time in refreshTokenCache
+            }
+        }
+
+        return sessionId;
+    }
+
+    @Override
+    public AuthResponse refreshLogin(String refreshToken, String accessToken) {
         if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
-        String username = jwtService.extractUsername(refreshToken);
-        Date refreshExpiration = jwtService.extractExpiry(refreshToken);
-        Date refreshIssuedAt = jwtService.extractIssuedAt(refreshToken);
-        Date accessExpiration = null;
+        Claims claims = jwtService.extractClaims(refreshToken);
+        String username = jwtService.getUsername(claims);
+        Date refreshExpiration = jwtService.getExpiry(claims);
+        Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
 
-        /* set accessToken to null if the token is invalid,
-        ensuring the that there are no unnecessary exception thrown to the user
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+
+        /* Calculating new Access and refresh Expiration if the access token is present,
+        if not present or not valid the accessExpiration stays null, in that case the default expiration
+        time will be used for the token.
          */
+        long evaluatedAccessExpiration = accessTokenExpirySeconds;
+        long evaluatedRefreshExpiration = refreshTokenExpirySeconds;
+        if (accessExpiration != null) {
+            evaluatedAccessExpiration = this.getLeftOverSeconds(accessTokenExpirySeconds, accessExpiration);
+            evaluatedRefreshExpiration = this.getLeftOverSeconds(refreshTokenExpirySeconds, refreshExpiration);
+        }
+
+        return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
+    }
+
+    private Date getAccessExpiration(String token) {
         try {
-            accessExpiration = accessToken != null ? jwtService.extractExpiry(accessToken) : null;
-        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
-            accessToken = null;
+            Claims claims = jwtService.extractClaims(token);
+            return jwtService.getExpiry(claims);
+        } catch (JwtException ex) {
+            return null;
         }
+    }
 
-        // getting the leftover expiration duration for refresh token and access token
-        long evaluatedAccessExpiration = accessExpiration != null
-                ? accessTokenExpirySeconds - ((new Date().getTime() - accessExpiration.getTime()) / 1000)
-                : accessTokenExpirySeconds;
-        boolean newRefreshRequired = refreshIssuedAt.before(new Date()) && (refreshIssuedAt.getTime() - new Date().getTime()) > 24 * 60 * 60 * 1000;
-        long evaluatedRefreshExpiration = newRefreshRequired
-                ? refreshTokenExpirySeconds
-                : refreshTokenExpirySeconds - ((new Date().getTime() - refreshExpiration.getTime()) / 1000);
-
-        HttpHeaders headers = new HttpHeaders();
-
-        User user = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
-        // validating if the accessToken is not already present
-        if (accessToken == null) this.generateAccessToken(user, headers);
-
-        // validating if the refresh token was issued before 24 hours.
-        if (newRefreshRequired) {
-            // blocking old token
-            this.blockRefreshToken(refreshToken);
-            // generating new refresh token
-            this.generateRefreshToken(user, headers);
-        }
-
-        return ResponseEntity.ok().headers(headers).body(new ResponseStructure<AuthResponse>()
-                .setStatus(HttpStatus.OK.value())
-                .setMessage("Login refreshed successfully")
-                .setData(AuthResponse.builder()
-                        .userId(user.getUserId())
-                        .username(user.getUsername())
-                        .roles(user.getRoles().stream().map(UserRole::name).toList())
-                        .isAuthenticated(true)
-                        .accessExpiration(evaluatedAccessExpiration)
-                        .refreshExpiration(evaluatedRefreshExpiration)
-                        .build()));
+    private long getLeftOverSeconds(long expiryDuration, Date tokenExpiration) {
+        return expiryDuration - ((new Date().getTime() - tokenExpiration.getTime()) / 1000);
     }
 
     @Override
-    public ResponseEntity<SimpleResponseStructure> logout(String refreshToken, String accessToken) {
+    public void logout(String refreshToken, String accessToken) {
+        // should drop old token session IDs
+    }
 
-        // resetting tokens with blank value and 0 maxAge
+    @Override
+    public HttpHeaders invalidateTokens() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
-        // blocking the tokens
-        blockAccessToken(accessToken);
-        blockRefreshToken(refreshToken);
 
-        return ResponseEntity.ok().headers(headers).body(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
-                .setMessage("Logout Successful"));
+        return headers;
     }
 
     @Override
-    public ResponseEntity<SimpleResponseStructure> revokeAllOtherTokens(String refreshToken, String accessToken) {
-        if (refreshToken == null || accessToken == null)
-            throw new UserNotLoggedInException("Failed to revoke access from all other devices");
+    public void revokeAllOtherTokens(String refreshToken, String accessToken) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        return userRepo.findByUsername(username).map(user -> {
-            // blocking all other access tokens
-            accessTokenRepo.findAllByUserAndIsBlocked(user, false)
-                    .forEach(at -> {
-                        if (!at.getToken().equals(accessToken)) at.setBlocked(true);
-                        accessTokenRepo.save(at);
-                    });
-            // blocking all other refresh tokens
-            refreshTokenRepo.findALLByUserAndIsBlocked(user, false)
-                    .forEach(rt -> {
-                        if (!rt.getToken().equals(refreshToken)) rt.setBlocked(true);
-                        refreshTokenRepo.save(rt);
-                    });
-
-            return ResponseEntity.ok(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
-                    .setMessage("Successfully revoked access from all other devices"));
-
-        }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
-    }
-
-    @Override
-    public ResponseEntity<SimpleResponseStructure> revokeAllTokens() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        return userRepo.findByUsername(username).map(user -> {
-            // blocking all other access tokens
-            accessTokenRepo.findAllByUserAndIsBlocked(user, false)
-                    .forEach(at -> {
-                        at.setBlocked(true);
-                        accessTokenRepo.save(at);
-                    });
-            // blocking all other refresh tokens
-            refreshTokenRepo.findALLByUserAndIsBlocked(user, false)
-                    .forEach(rt -> {
-                        rt.setBlocked(true);
-                        refreshTokenRepo.save(rt);
-                    });
-
-            // resetting tokens with blank value and 0 maxAge
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
-
-            return ResponseEntity.ok().headers(headers).body(new SimpleResponseStructure().setStatus(HttpStatus.OK.value())
-                    .setMessage("Successfully revoked access from all devices"));
-
-        }).orElseThrow(() -> new UsernameNotFoundException("Failed to revoke access fromm all other devices"));
-    }
-
-    /* ----------------------------------------------------------------------------------------------------------- */
-    private void generateAccessToken(User user, HttpHeaders headers) {
-        //generating access token
-        String newAccessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
-
-        // adding cookies to the HttpHeaders
-        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("at", newAccessToken, accessTokenExpirySeconds));
-
-        // saving access token to the database
-        accessTokenRepo.save(AccessToken.builder()
-                .isBlocked(false)
-                .token(newAccessToken)
-                .expiration(LocalDateTime.now().plusSeconds(accessTokenExpirySeconds))
-                .user(user).build());
-    }
-
-    private void generateRefreshToken(User user, HttpHeaders headers) {
-        //generating access token
-        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getRoles().stream().map(UserRole::name).toList().toString());
-
-        // adding cookies to the HttpHeaders
-        headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("rt", newRefreshToken, refreshTokenExpirySeconds));
-
-        // saving refresh token to the database
-        refreshTokenRepo.save(RefreshToken.builder()
-                .isBlocked(false)
-                .token(newRefreshToken)
-                .expiration(LocalDateTime.now().plusSeconds(refreshTokenExpirySeconds))
-                .user(user).build());
-    }
-
-    private void blockAccessToken(String accessToken) {
-        accessTokenRepo.findByToken(accessToken).ifPresent(at -> {
-            at.setBlocked(true);
-            accessTokenRepo.save(at);
+        userRepo.findByUsername(username).ifPresent(user -> {
+            // should drop old token session IDs
         });
     }
 
-    private void blockRefreshToken(String refreshToken) {
-        refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
-            rt.setBlocked(true);
-            refreshTokenRepo.save(rt);
+    @Override
+    public void revokeAllTokens() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        userRepo.findByUsername(username).ifPresent(user -> {
+            // should drop old token session IDs
         });
     }
 
@@ -359,36 +324,36 @@ public class AuthServiceImpl implements AuthService {
                         ? Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER)
                         : List.of(UserRole.CUSTOMER))
                 .build();
-}
+    }
 
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
         String text =
                 "<!DOCTYPE html>\n" +
-                "<html lang=\"en\">\n" +
-                "<head>\n" +
-                "    <meta charset=\"UTF-8\">\n" +
-                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                "    <title>Mail</title>\n" +
-                "</head>\n" +
-                "<style>\n" +
-                "    *{\n" +
-                "        font-family: Verdana, Geneva, Tahoma, sans-serif\n" +
-                "    }\n" +
-                "    h4 {\n" +
-                "        color: rgb(0, 98, 255);\n" +
-                "    }\n" +
-                "</style>\n" +
-                "<body>\n" +
-                "    <div>\n" +
-                "        <h3>Hurrey!!! You are just few steps away!</h3>\n" +
-                "        <p>Please use this OTP given below for further verification.</p>\n" +
-                "        <h4>" + otp + "</h4>\n" +
-                "        <br> <br> <br>\n" +
-                "        <p>with best regards</p>\n" +
-                "        <p>E Stores</p>\n" +
-                "    </div>\n" +
-                "</body>\n" +
-                "</html>";
+                        "<html lang=\"en\">\n" +
+                        "<head>\n" +
+                        "    <meta charset=\"UTF-8\">\n" +
+                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                        "    <title>Mail</title>\n" +
+                        "</head>\n" +
+                        "<style>\n" +
+                        "    *{\n" +
+                        "        font-family: Verdana, Geneva, Tahoma, sans-serif\n" +
+                        "    }\n" +
+                        "    h4 {\n" +
+                        "        color: rgb(0, 98, 255);\n" +
+                        "    }\n" +
+                        "</style>\n" +
+                        "<body>\n" +
+                        "    <div>\n" +
+                        "        <h3>Hurrey!!! You are just few steps away!</h3>\n" +
+                        "        <p>Please use this OTP given below for further verification.</p>\n" +
+                        "        <h4>" + otp + "</h4>\n" +
+                        "        <br> <br> <br>\n" +
+                        "        <p>with best regards</p>\n" +
+                        "        <p>E Stores</p>\n" +
+                        "    </div>\n" +
+                        "</body>\n" +
+                        "</html>";
 
         mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())

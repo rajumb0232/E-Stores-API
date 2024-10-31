@@ -32,13 +32,10 @@ public class FilterHelper {
         return cookieValue;
     }
 
-    public static void setAuthentication(String username, String roles, HttpServletRequest request){
+    public static void setAuthentication(String username, List<String> roles, HttpServletRequest request){
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            roles = roles.replace('[', ' ').replace(']', ' ').trim();
-            List<String> roleList = Arrays.asList(roles.split(", "));
-
             UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username,
-                    null, roleList.stream().map(SimpleGrantedAuthority::new).toList());
+                    null, roles.stream().map(SimpleGrantedAuthority::new).toList());
             token.setDetails(new WebAuthenticationDetails(request));
             SecurityContextHolder.getContext().setAuthentication(token);
         }
@@ -48,9 +45,10 @@ public class FilterHelper {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("Application/json");
         response.setHeader("error", message);
-        SimpleResponseStructure structure = new SimpleResponseStructure()
-                .setStatus(HttpStatus.UNAUTHORIZED.value())
-                .setMessage(message);
+        SimpleResponseStructure structure = SimpleResponseStructure.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .message(message)
+                .build();
         new ObjectMapper().writeValue(response.getOutputStream(), structure);
     }
 }

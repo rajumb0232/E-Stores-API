@@ -1,18 +1,97 @@
 package com.devb.estores.security;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
-public interface JwtService {
 
-    String generateAccessToken(String username, String role);
+@Slf4j
+@Service
+public class JwtService {
 
-    String generateRefreshToken(String username, String role);
+    private final String secret;
 
-    String extractUsername(String token);
+    public JwtService(
+            @Value("${myapp.jwt.secret}") String secret) {
+        this.secret = secret;
+    }
 
-    String extractUserRoles(String token);
+    public String generateAccessToken(TokenPayload tokenPayload) {
+        log.info("Generating Access Token...");
+        return createJwtToken(tokenPayload);
+    }
 
-    Date extractExpiry(String token);
+    public String generateRefreshToken(TokenPayload tokenPayload) {
+        log.info("Generating Refresh Token...");
+        return createJwtToken(tokenPayload);
+    }
 
-    Date extractIssuedAt(String refreshToken);
+    private String createJwtToken(TokenPayload tokenPayload) {
+        return Jwts.builder()
+                .setClaims(tokenPayload.getClaims())
+                .setSubject(tokenPayload.getSubject())
+                .setIssuedAt(tokenPayload.getIssuedAt())
+                .setExpiration(tokenPayload.getExpiration())
+                .signWith(getSignatureKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    private Key getSignatureKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+    }
+
+    // parsing JWT
+
+    public Claims extractClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignatureKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    public String getUsername(Claims claims) {
+        return claims.getSubject();
+    }
+
+    public List<String> getUserRoles(Claims claims) {
+        return claims.get(TokenPayload.CLAIM_ROLES, List.class);
+    }
+
+    public Date getExpiry(Claims claims){
+        return claims.getExpiration();
+    }
+
+    public Date getIssuedAt(Claims claims) {
+        return claims.getIssuedAt();
+    }
+
+    public String getBrowserName(Claims claims) {
+        return claims.get(TokenPayload.CLAIM_BROWSER_NAME, String.class);
+    }
+
+    public String getSecChUaPlatform(Claims claims) {
+        return claims.get(TokenPayload.CLAIM_SEC_CH_UA_PLATFORM, String.class);
+    }
+
+    public String getSecChUaMobile(Claims claims) {
+        return claims.get(TokenPayload.CLAIM_SEC_CH_UA_MOBILE, String.class);
+    }
+
+    public String getJwtId(Claims claims) {
+        return claims.get(TokenPayload.CLAIM_JWT_ID, String.class);
+    }
+
+    public String getUserAgent(Claims claims) {
+        return claims.get(TokenPayload.CLAIM_USER_AGENT, String.class);
+    }
 }

@@ -1,7 +1,5 @@
 package com.devb.estores.security;
 
-import com.devb.estores.repository.AccessTokenRepo;
-import com.devb.estores.repository.RefreshTokenRepo;
 import com.devb.estores.securityfilters.AuthFilter;
 import com.devb.estores.securityfilters.LoginFilter;
 import com.devb.estores.securityfilters.RefreshFilter;
@@ -15,18 +13,13 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -35,8 +28,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtService jwtService;
-    private final AccessTokenRepo accessTokenRepo;
-    private final RefreshTokenRepo refreshTokenRepo;
     private final CorsConfigurationSource corsSource;
 
     @Bean
@@ -106,7 +97,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/refresh/**"))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new RefreshFilter(jwtService, refreshTokenRepo), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new RefreshFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -119,7 +110,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new AuthFilter(jwtService, accessTokenRepo), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
