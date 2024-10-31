@@ -43,7 +43,7 @@ public class JwtService {
     }
 
     private Key getSignatureKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(appEnv.getJwtSecret()));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(appEnv.getJwt().getSecret()));
     }
 
     // parsing JWT

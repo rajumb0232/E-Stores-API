@@ -103,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
         // Authenticating user
         User user = this.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
 
-        return this.generateAuthResponse(user, appEnv.getJwtAccessExpirationSeconds(), appEnv.getJwtRefreshExpirationSeconds());
+        return this.generateAuthResponse(user, appEnv.getJwt().getAccessExpirationSeconds(), appEnv.getJwt().getRefreshExpirationSeconds());
     }
 
     private User authenticateUser(String email, String password) {
@@ -138,14 +138,14 @@ public class AuthServiceImpl implements AuthService {
         /* Generating Access Token, Refresh Token, and new Device Identifier if the access token is required.
          * The Access Token is required when the expiration of authResponse is the default expire duration
          * */
-        if (authResponse.getAccessExpiration() == appEnv.getJwtAccessExpirationSeconds()) {
+        if (authResponse.getAccessExpiration() == appEnv.getJwt().getAccessExpirationSeconds()) {
 
             generateToken(authResponse.getUsername(), authResponse.getRoles(),
                     browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
                     headers, TokenType.ACCESS);
 
             log.info("Generating new device identifier...");
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, appEnv.getJwtAccessExpirationSeconds()));
+            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, appEnv.getJwt().getAccessExpirationSeconds()));
 
             /* Generating a new refresh Token whenever a new Access Token is used for Token Rotation mechanism.
              * */
@@ -160,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
                                String secChUaMobile, String secChUaPlatform, String userAgent,
                                String deviceId, HttpHeaders headers, TokenType tokenType) {
 
-        long expiration = (tokenType.equals(TokenType.ACCESS)) ? appEnv.getJwtAccessExpirationSeconds(): appEnv.getJwtRefreshExpirationSeconds();
+        long expiration = (tokenType.equals(TokenType.ACCESS)) ? appEnv.getJwt().getAccessExpirationSeconds(): appEnv.getJwt().getRefreshExpirationSeconds();
 
         TokenPayload tokenPayload = TokenPayload.create()
                 .setSubject(username)
@@ -228,11 +228,11 @@ public class AuthServiceImpl implements AuthService {
         if not present or not valid the accessExpiration stays null, in that case the default expiration
         time will be used for the token.
          */
-        long evaluatedAccessExpiration = appEnv.getJwtAccessExpirationSeconds();
-        long evaluatedRefreshExpiration = appEnv.getJwtRefreshExpirationSeconds();
+        long evaluatedAccessExpiration = appEnv.getJwt().getAccessExpirationSeconds();
+        long evaluatedRefreshExpiration = appEnv.getJwt().getRefreshExpirationSeconds();
         if (accessExpiration != null) {
-            evaluatedAccessExpiration = this.getLeftOverSeconds(appEnv.getJwtAccessExpirationSeconds(), accessExpiration);
-            evaluatedRefreshExpiration = this.getLeftOverSeconds(appEnv.getJwtRefreshExpirationSeconds(), refreshExpiration);
+            evaluatedAccessExpiration = this.getLeftOverSeconds(appEnv.getJwt().getAccessExpirationSeconds(), accessExpiration);
+            evaluatedRefreshExpiration = this.getLeftOverSeconds(appEnv.getJwt().getRefreshExpirationSeconds(), refreshExpiration);
         }
 
         return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
