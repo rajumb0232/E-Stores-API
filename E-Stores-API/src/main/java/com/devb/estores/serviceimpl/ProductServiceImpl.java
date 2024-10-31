@@ -14,11 +14,7 @@ import com.devb.estores.requestdto.ProductRequest;
 import com.devb.estores.requestdto.VaryingProductRequest;
 import com.devb.estores.responsedto.ProductResponse;
 import com.devb.estores.service.ProductService;
-import com.devb.estores.util.ResponseStructure;
-import com.devb.estores.util.SimpleResponseStructure;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -34,27 +30,27 @@ public class ProductServiceImpl implements ProductService {
     private ProductMapper productMapper;
 
     @Override
-    public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest, String storeId) {
+    public ProductResponse addProduct(ProductRequest productRequest, String storeId) {
         return storeRepo.findById(storeId).map(store ->
                 {
-                    /*
-                     * Verifying if the specified subCategory is one of the subCategory of topCategory
-                     * */
+                    /* Verifying if the specified subCategory is one of the subCategory of topCategory
+                     */
                     if (!store.getTopCategory().getSubCategories().contains(productRequest.getSubCategory()))
                         throw new InvalidSubCategoryException("failed to add product");
-                    /*
-                     * Verifying if the productType available under specified topCategory and subCategory
-                     * */
+
+                    /* Verifying if the productType available under specified topCategory and subCategory
+                     and type
+                     */
                     return typeRepo.findByTypeNameAndSubCategoryAndTopCategory(
                                     productRequest.getProductType().toLowerCase(),
                                     productRequest.getSubCategory(),
                                     store.getTopCategory())
                             .map(type -> {
                                 Product product = productMapper.mapToNewProductEntity(productRequest);
-                                /*
-                                 * The Product Specification and Variant Specification should not be the same,
-                                 * the specifications in variants are removed from the product specifications list.
-                                 * */
+
+                                /* The Product Specification and Variant Specification should not be the same,
+                                 the specifications that are a part of variants are removed from the product specifications list.
+                                 */
                                 if (productRequest instanceof VaryingProductRequest varyingProductRequest) {
                                     removeMatchingSpecFromProduct(product, varyingProductRequest.getVariantBy());
                                 }
@@ -62,72 +58,49 @@ public class ProductServiceImpl implements ProductService {
                                 product.setProductTypeId(type.getTypeId());
                                 product.setStoreId(storeId);
                                 product = productRepo.save(product);
+
+                                /* Updating Spec Suggest list for the products type, this can further be used for
+                                Auto suggestion of specifications to the seller
+                                */
                                 specSuggestService.updateSpecSuggest(product.getSpecifications(), product.getProductTypeId());
 
-                                return ResponseEntity.ok(new ResponseStructure<ProductResponse>()
-                                        .setStatus(HttpStatus.OK.value())
-                                        .setMessage("Product saved successfully")
-                                        .setData(productMapper.mapToProductPageResponse(product, type, store)));
+                                return productMapper.mapToProductPageResponse(product, type, store);
                             }).orElseThrow(() -> new ProductTypeNotFoundException("Failed to add Product"));
                 }
         ).orElseThrow(() -> new StoreNotFoundException("Failed to add Product"));
     }
 
-    @Override
-    public ResponseEntity<SimpleResponseStructure> updateVariantBy(String productId, List<String> specNames) {
-        return productRepo.findById(productId).map(product -> {
-            boolean result = removeMatchingSpecFromProduct(product, new HashSet<>(specNames));
-            if (result) productRepo.save(product);
+    private void removeMatchingSpecFromProduct(Product product, Set<String> specNames) {
+        Map<String, String> specifications = product.getSpecifications();
+        specNames.forEach(specifications::remove);
+        product.setSpecifications(specifications);
+    }
 
-            return ResponseEntity
-                    .ok(new SimpleResponseStructure()
-                            .setMessage("VariantBy updated successfully")
-                            .setStatus(HttpStatus.OK.value()));
+    @Override
+    public void updateVariantBy(String productId, List<String> specNames) {
+        productRepo.findById(productId).map(product -> {
+            removeMatchingSpecFromProduct(product, new HashSet<>(specNames));
+            return productRepo.save(product);
         }).orElseThrow();
     }
 
-    private boolean removeMatchingSpecFromProduct(Product product, Set<String> specNames) {
-        Map<String, String> invalidSpecs = new HashMap<>();
-        if (product.getSpecifications() != null) {
-            product.getSpecifications().forEach((k, v) -> specNames.forEach(name -> {
-                if (name.equalsIgnoreCase(k)) invalidSpecs.put(k, v);
-            }));
-            product.getSpecifications().forEach((k, v) -> {
-                if (("size").equalsIgnoreCase(k)) invalidSpecs.put(k, v);
-                if (("weight").equalsIgnoreCase(k)) invalidSpecs.put(k, v);
-                if (("liter").equalsIgnoreCase(k)) invalidSpecs.put(k, v);
-            });
-        }
-
-        invalidSpecs.forEach((k, v) -> product.getSpecifications().remove(k));
-        return true;
-    }
-
     @Override
-    public ResponseEntity<ResponseStructure<ProductResponse>> getProductById(String productId) {
+    public ProductResponse getProductById(String productId) {
         return productRepo.findById(productId).map(product -> {
             ProductType type = typeRepo.findById(product.getProductTypeId()).orElseThrow();
             Store store = storeRepo.findById(product.getStoreId()).orElseThrow();
 
-            return ResponseEntity.status(HttpStatus.FOUND).body(new ResponseStructure<ProductResponse>()
-                    .setStatus(HttpStatus.FOUND.value())
-                    .setMessage("Products found")
-                    .setData(productMapper.mapToProductPageResponse(product, type, store)));
+            return productMapper.mapToProductPageResponse(product, type, store);
         }).orElseThrow();
     }
 
     @Override
-    public ResponseEntity<ResponseStructure<List<ProductResponse>>> getProducts(String text) {
-        List<ProductResponse> products = productRepo.findByTitleIgnoreCaseLikeOrDescriptionIgnoreCaseLike(text, text)
+    public List<ProductResponse> getProducts(String text) {
+        return productRepo.findByTitleIgnoreCaseLikeOrDescriptionIgnoreCaseLike(text, text)
                 .stream().map(product -> {
                     ProductType type = typeRepo.findById(product.getProductTypeId()).orElseThrow();
                     Store store = storeRepo.findById(product.getStoreId()).orElseThrow();
                     return productMapper.mapToProductPageResponse(product, type, store);
                 }).toList();
-
-        return ResponseEntity.ok(new ResponseStructure<List<ProductResponse>>()
-                .setStatus(HttpStatus.OK.value())
-                .setMessage("Products Found")
-                .setData(products));
     }
 }

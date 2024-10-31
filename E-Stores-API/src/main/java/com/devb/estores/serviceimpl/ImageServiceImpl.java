@@ -6,10 +6,8 @@ import com.devb.estores.model.Image;
 import com.devb.estores.repository.ImageRepo;
 import com.devb.estores.repository.StoreRepo;
 import com.devb.estores.service.ImageService;
-import com.devb.estores.util.ResponseStructure;
 import lombok.AllArgsConstructor;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -26,7 +24,7 @@ public class ImageServiceImpl implements ImageService {
     private final StoreRepo storeRepo;
 
     @Override
-    public ResponseEntity<ResponseStructure<String>> addStoreImage(String storeId, MultipartFile image) {
+    public String addStoreImage(String storeId, MultipartFile image) {
         return storeRepo.findById(storeId).map(store -> {
             if (store.getLogoLink() != null) {
                 String[] a = store.getLogoLink().split("/");
@@ -43,8 +41,7 @@ public class ImageServiceImpl implements ImageService {
             Image i = imageRepo.save(storeImage);
             store.setLogoLink("/images/" + i.getImageId());
             storeRepo.save(store);
-            return ResponseEntity.ok(new ResponseStructure<String>().setStatus(HttpStatus.OK.value())
-                    .setMessage("Successfully save image").setData("/images/" + i.getImageId()));
+            return "/images/" + i.getImageId();
         }).orElseThrow();
     }
 
