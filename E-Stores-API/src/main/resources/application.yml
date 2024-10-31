@@ -40,8 +40,8 @@ server:
 
 #Application Configuration
 app:
-  base_url: /api/fkv1
+  base-url: /api/fkv1
   jwt:
     secret: ${JWT_SECRET}
-    access_expiration_seconds: 3600
-    refresh_expiration_seconds: 1296000
+    access-expiration-seconds: 3600
+    refresh-expiration-seconds: 1296000

@@ -1,7 +1,7 @@
 package com.devb.estores.serviceimpl;
 
 import com.devb.estores.cache.CacheStore;
-import com.devb.estores.config.Environment;
+import com.devb.estores.config.AppEnv;
 import com.devb.estores.dto.MessageData;
 import com.devb.estores.dto.OtpModel;
 import com.devb.estores.enums.UserRole;
@@ -21,7 +21,6 @@ import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -48,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final CookieManager cookieManager;
     private final Random random;
-    private final Environment environment;
+    private final AppEnv appEnv;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
@@ -104,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
         // Authenticating user
         User user = this.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
 
-        return this.generateAuthResponse(user, environment.getJwtAccessExpirationSeconds(), environment.getJwtRefreshExpirationSeconds());
+        return this.generateAuthResponse(user, appEnv.getJwtAccessExpirationSeconds(), appEnv.getJwtRefreshExpirationSeconds());
     }
 
     private User authenticateUser(String email, String password) {
@@ -139,14 +138,14 @@ public class AuthServiceImpl implements AuthService {
         /* Generating Access Token, Refresh Token, and new Device Identifier if the access token is required.
          * The Access Token is required when the expiration of authResponse is the default expire duration
          * */
-        if (authResponse.getAccessExpiration() == environment.getJwtAccessExpirationSeconds()) {
+        if (authResponse.getAccessExpiration() == appEnv.getJwtAccessExpirationSeconds()) {
 
             generateToken(authResponse.getUsername(), authResponse.getRoles(),
                     browser, secChUaMobile, secChUaPlatform, userAgent, newDeviceId,
                     headers, TokenType.ACCESS);
 
             log.info("Generating new device identifier...");
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, environment.getJwtAccessExpirationSeconds()));
+            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, appEnv.getJwtAccessExpirationSeconds()));
 
             /* Generating a new refresh Token whenever a new Access Token is used for Token Rotation mechanism.
              * */
@@ -161,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
                                String secChUaMobile, String secChUaPlatform, String userAgent,
                                String deviceId, HttpHeaders headers, TokenType tokenType) {
 
-        long expiration = (tokenType.equals(TokenType.ACCESS)) ? environment.getJwtAccessExpirationSeconds(): environment.getJwtRefreshExpirationSeconds();
+        long expiration = (tokenType.equals(TokenType.ACCESS)) ? appEnv.getJwtAccessExpirationSeconds(): appEnv.getJwtRefreshExpirationSeconds();
 
         TokenPayload tokenPayload = TokenPayload.create()
                 .setSubject(username)
@@ -229,11 +228,11 @@ public class AuthServiceImpl implements AuthService {
         if not present or not valid the accessExpiration stays null, in that case the default expiration
         time will be used for the token.
          */
-        long evaluatedAccessExpiration = environment.getJwtAccessExpirationSeconds();
-        long evaluatedRefreshExpiration = environment.getJwtRefreshExpirationSeconds();
+        long evaluatedAccessExpiration = appEnv.getJwtAccessExpirationSeconds();
+        long evaluatedRefreshExpiration = appEnv.getJwtRefreshExpirationSeconds();
         if (accessExpiration != null) {
-            evaluatedAccessExpiration = this.getLeftOverSeconds(environment.getJwtAccessExpirationSeconds(), accessExpiration);
-            evaluatedRefreshExpiration = this.getLeftOverSeconds(environment.getJwtRefreshExpirationSeconds(), refreshExpiration);
+            evaluatedAccessExpiration = this.getLeftOverSeconds(appEnv.getJwtAccessExpirationSeconds(), accessExpiration);
+            evaluatedRefreshExpiration = this.getLeftOverSeconds(appEnv.getJwtRefreshExpirationSeconds(), refreshExpiration);
         }
 
         return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);

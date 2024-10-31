@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("${app.base_url}")
+@RequestMapping("${app.base-url}")
 @AllArgsConstructor
 public class VariantController {
 

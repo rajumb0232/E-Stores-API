@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("${app.base_url}")
+@RequestMapping("${app.base-url}")
 public class AddressController {
 
     private final AddressService addressService;

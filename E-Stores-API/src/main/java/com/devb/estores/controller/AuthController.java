@@ -22,7 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("${app.base_url}")
+@RequestMapping("${app.base-url}")
 public class AuthController extends ResponseEntityExceptionHandler {
 
     private final AuthService authService;

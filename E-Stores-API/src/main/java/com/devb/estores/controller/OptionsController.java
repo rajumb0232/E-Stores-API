@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping("${app.base_url}")
+@RequestMapping("${app.base-url}")
 @AllArgsConstructor
 public class OptionsController {
 
