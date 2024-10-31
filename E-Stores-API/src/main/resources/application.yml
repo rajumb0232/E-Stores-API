@@ -38,17 +38,10 @@ spring:
 server:
   port: 7000
 
+#Application Configuration
 app:
   base_url: /api/fkv1
-
-# JWT secret
-myapp:
   jwt:
     secret: ${JWT_SECRET}
-
-token:
-  expiry:
-    access:
-      seconds: 3600
-    refresh:
-      seconds: 1296000
+    access_expiration_seconds: 3600
+    refresh_expiration_seconds: 1296000
