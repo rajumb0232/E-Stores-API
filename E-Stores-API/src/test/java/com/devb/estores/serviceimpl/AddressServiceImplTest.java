@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -49,21 +50,21 @@ class AddressServiceImplTest {
         Address address = new Address();
         AddressResponse addressResponse = new AddressResponse();
 
-        ResponseStructure<AddressResponse> expectedResponse = new ResponseStructure<>();
-        expectedResponse.setStatus(HttpStatus.CREATED.value());
-        expectedResponse.setMessage("Address saved successfully");
-        expectedResponse.setData(addressResponse);
-
         // Mock repository and mapper behavior
         when(storeRepo.findById(storeId)).thenReturn(Optional.of(store));
         when(addressMapper.mapToAddressEntity(any(AddressRequest.class), any(Address.class))).thenReturn(address);
         when(addressRepo.save(address)).thenReturn(address);
+        when(storeRepo.save(store)).thenReturn(store);
         when(addressMapper.mapToAddressResponse(address)).thenReturn(addressResponse);
 
         // Act
-        ResponseEntity<ResponseStructure<AddressResponse>> responseEntity = addressServiceImpl.addAddressToStore(addressRequest, storeId);
+        AddressResponse response = addressServiceImpl.addAddressToStore(addressRequest, storeId);
 
         // Assert
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
+        assertEquals(addressResponse, response, "The returned address Response should match the mocked addressResponse Object.");
+
+        // Verify Repo's
+        verify(addressRepo).save(address);
+        verify(storeRepo).save(store);
     }
 }

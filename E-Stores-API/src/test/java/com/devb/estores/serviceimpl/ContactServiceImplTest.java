@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,35 +39,29 @@ class ContactServiceImplTest {
     @Autowired
     private ContactServiceImpl contactServiceImpl;
 
-//    @BeforeEach
-//    void setUp() {
-//        MockitoAnnotations.openMocks(this);
-//    }
-
     @Test
     void addContact() {
         // Arrange
         String addressId = "123";
-        ContactRequest contactRequest = ContactRequest.builder().build();
-        Contact contact = Contact.builder().build();
-        Contact otherContact = Contact.builder().build();
-        Address mockAddress = Address.builder().addressId(addressId).build();
+        ContactRequest contactRequest = new ContactRequest();
+        Address address = new Address();
+        List<Contact> existingContacts = new ArrayList<>();
+        address.setContacts(existingContacts);
 
-        // Mock
-        when(addressRepo.findById(addressId)).thenReturn(Optional.of(mockAddress));
-        when(contactMapper.mapToContactEntity(any(ContactRequest.class), any(Contact.class))).thenReturn(contact);
+        Contact contact = new Contact();
+        List<Contact> savedContacts = List.of(contact);
+
+        // Mock behavior
+        when(addressRepo.findById(addressId)).thenReturn(Optional.of(address));
+        when(contactMapper.mapToContactEntity(contactRequest, new Contact())).thenReturn(contact);
         when(contactRepo.save(contact)).thenReturn(contact);
-        when(contactRepo.findAllByAddress(mockAddress)).thenReturn(List.of(contact, otherContact));
+        when(contactRepo.findAllByAddress(address)).thenReturn(savedContacts);
 
         // Act
-        ResponseEntity<ResponseStructure<List<Contact>>> response = contactServiceImpl.addContact(contactRequest, addressId);
+        List<Contact> result = contactServiceImpl.addContact(contactRequest, addressId);
 
-        // Assertion
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-
-        // Verify the interaction with addressRepo.findById
-        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(addressRepo).findById(captor.capture());
-        assertEquals(addressId, captor.getValue());
+        // Assert
+        assertEquals(savedContacts, result, "The result should match the list of saved contacts");
+        verify(contactRepo).save(contact);
     }
 }
