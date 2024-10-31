@@ -1,12 +1,13 @@
 package com.devb.estores.security;
 
+import com.devb.estores.config.AppEnv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -16,14 +17,10 @@ import java.util.List;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class JwtService {
 
-    private final String secret;
-
-    public JwtService(
-            @Value("${myapp.jwt.secret}") String secret) {
-        this.secret = secret;
-    }
+    private final AppEnv appEnv;
 
     public String generateAccessToken(TokenPayload tokenPayload) {
         log.info("Generating Access Token...");
@@ -46,7 +43,7 @@ public class JwtService {
     }
 
     private Key getSignatureKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(appEnv.getJwt().getSecret()));
     }
 
     // parsing JWT

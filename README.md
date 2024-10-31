@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a seller-centric backend REST API for an e-commerce platform. It enables sellers to create and manage their own online stores, allowing customers to browse and place orders directly from the stores they prefer. The platform is designed with a focus on empowering individual sellers, offering them tools to manage products, orders, and customer interactions efficiently.
+This project is a backend REST API for an e-commerce platform. It enables sellers to create and manage their own online stores, allowing customers to browse and place orders directly from the stores they prefer. The platform is designed with a focus on empowering individual sellers, offering them tools to manage products, orders, and customer interactions efficiently.
 
 ## Table of Contents
 
@@ -123,28 +123,9 @@ Swagger UI: `http://localhost:7000/swagger-ui.html`
 | POST   | `/revoke-other`       | Blocks all tokens excluding the current one    |
 | POST   | `/revoke-all`         | Blocks all tokens issued to user               |
 
-### Response Examples
-
-<!-- **GET /users**
-```json
-[
-  {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com"
-  }
-]
-```
-
-**POST /auth/login**
-```json
-{
-  "username": "johndoe",
-  "password": "yourpassword"
-}
-```
--->
----
+**Find the detailed Documentation through Swagger:** `http://localhost:7000/swagger-ui.html`
+(or)
+**You can also find it in Postman:** [Postman API](https://e-stores.postman.co/workspace/Team-Workspace~f285e463-d634-46c0-882f-a50b8e8e59f3/api/48bfcf95-c648-4465-92da-6b87a9480b3e?action=share&creator=36942562&active-environment=36942562-c940278d-34a3-4f8f-9b14-8a7141964326)
 
 ### Error Handling
 
