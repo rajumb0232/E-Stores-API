@@ -45,7 +45,7 @@ public class VariantServiceImpl implements VariantService {
         }).orElseThrow();
     }
 
-    private Set<Variant> validateVariantsConsistency(List<VariantRequest> variantRequest, Set<String> variantBy) {
+    Set<Variant> validateVariantsConsistency(List<VariantRequest> variantRequest, Set<String> variantBy) {
         return variantRequest.stream()
                 .map(req -> {
                     /*
