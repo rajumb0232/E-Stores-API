@@ -12,7 +12,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 public class FilterHelper {
@@ -27,7 +26,10 @@ public class FilterHelper {
         String cookieValue = null;
         if (cookies != null)
             for (Cookie cookie : cookies) {
-                if (cookie.getName().equals(cookieName)) cookieValue = cookie.getValue();
+                if (cookie.getName().equals(cookieName)){
+                    cookieValue = cookie.getValue();
+                    break;
+                }
             }
         return cookieValue;
     }
@@ -50,5 +52,17 @@ public class FilterHelper {
                 .message(message)
                 .build();
         new ObjectMapper().writeValue(response.getOutputStream(), structure);
+    }
+
+    public static String extractDeviceId(Cookie[] cookies) {
+        String did = "";
+        if (cookies != null)
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("did")){
+                    did = cookie.getValue();
+                    break;
+                }
+            }
+        return did;
     }
 }
