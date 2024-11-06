@@ -22,11 +22,11 @@ public class CacheBeanConfig {
 
     @Bean
     CacheConfigurer<String, Integer> OtpCache() {
-        return this.configure("opt-cache", String.class, Integer.class, 10000, 1, Duration.ofMinutes(5));
+        return this.configure(CacheName.OTP_CACHE, String.class, Integer.class, 10000, 1, Duration.ofMinutes(5));
     }
 
     @Bean
     CacheConfigurer<String, User> userCache() {
-        return this.configure("user-cache", String.class, User.class, 20000, 10, Duration.ofDays(1));
+        return this.configure(CacheName.USER_CACHE, String.class, User.class, 20000, 10, Duration.ofDays(1));
     }
 }
