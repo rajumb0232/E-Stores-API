@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Entity
@@ -17,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class User {
+public class User implements Serializable {
     @Id
     @GeneratedValue(generator = "custom")
     @GenericGenerator(name = "custom", type = IdGenerator.class)

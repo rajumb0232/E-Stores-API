@@ -1,5 +1,7 @@
 package com.devb.estores.serviceimpl;
 
+import com.devb.estores.cache.CacheName;
+import com.devb.estores.cache.CacheService;
 import com.devb.estores.cache.CacheStore;
 import com.devb.estores.config.AppEnv;
 import com.devb.estores.dto.MessageData;
@@ -41,13 +43,12 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
-    private final CacheStore<OtpModel> otpCache;
-    private final CacheStore<User> userCacheStore;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final CookieManager cookieManager;
     private final Random random;
     private final AppEnv appEnv;
+    private final CacheService cacheService;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
@@ -61,16 +62,14 @@ public class AuthServiceImpl implements AuthService {
         User user = mapToUserEntity(userRequest, role);
 
         // caching user data
-        userCacheStore.add(user.getEmail(), user);
+        cacheService.doEntry(CacheName.USER_CACHE, user.getEmail(), user);
 
-        // Generate the OTP and provide the ID of the OTP as a path variable to the confirmation link.
-        OtpModel otp = OtpModel.builder()
-                .otp(random.nextInt(100000, 999999))
-                .email(user.getEmail()).build();
-        otpCache.add(otp.getEmail(), otp);
+        // Generating OTP and caching to otp-cache
+        int otp = random.nextInt(100000, 999999);
+        cacheService.doEntry(CacheName.OTP_CACHE, user.getEmail(), otp);
 
         try {
-            sendOTPToMailId(user, otp.getOtp());
+            sendOTPToMailId(user, otp);
             return "Verify Email using the OTP sent to " + user.getEmail();
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to verify the email ID");
@@ -79,17 +78,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponse verifyUserEmail(OtpModel otpModel) {
-        OtpModel otp = otpCache.get(otpModel.getEmail());
-        User user = userCacheStore.get(otpModel.getEmail());
+        Integer otp = cacheService.getEntry(CacheName.OTP_CACHE, otpModel.getEmail(), Integer.class);
+        User user = cacheService.getEntry(CacheName.USER_CACHE, otpModel.getEmail(), User.class);
 
         if (otp == null) throw new OtpExpiredException(FAILED_OTP_VERIFICATION);
         if (user == null) throw new RegistrationSessionExpiredException(FAILED_OTP_VERIFICATION);
-        if (otp.getOtp() != otpModel.getOtp()) throw new IncorrectOTPException(FAILED_OTP_VERIFICATION);
+        if (otp != otpModel.getOtp()) throw new IncorrectOTPException(FAILED_OTP_VERIFICATION);
 
         user.setEmailVerified(true);
         user = userRepo.save(user);
 
-        otpCache.remove(otpModel.getEmail());
+        cacheService.evictEntry(CacheName.USER_CACHE, user.getEmail());
+        cacheService.evictEntry(CacheName.OTP_CACHE, user.getEmail());
+
         try {
             sendConfirmationMail(user);
             return mapToUserResponse(user);
