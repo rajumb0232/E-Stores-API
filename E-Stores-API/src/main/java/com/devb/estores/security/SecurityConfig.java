@@ -1,5 +1,6 @@
 package com.devb.estores.security;
 
+import com.devb.estores.cache.CacheService;
 import com.devb.estores.securityfilters.AuthFilter;
 import com.devb.estores.securityfilters.LoginFilter;
 import com.devb.estores.securityfilters.RefreshFilter;
@@ -29,6 +30,7 @@ public class SecurityConfig {
 
     private final JwtService jwtService;
     private final CorsConfigurationSource corsSource;
+    private final CacheService cacheService;
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -97,7 +99,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/refresh/**"))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new RefreshFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new RefreshFilter(jwtService, cacheService), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -110,7 +112,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new AuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter(jwtService, cacheService), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

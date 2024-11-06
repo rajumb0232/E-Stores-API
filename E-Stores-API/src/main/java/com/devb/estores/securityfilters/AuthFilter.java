@@ -1,5 +1,6 @@
 package com.devb.estores.securityfilters;
 
+import com.devb.estores.cache.CacheService;
 import com.devb.estores.exceptions.UserNotLoggedInException;
 import com.devb.estores.security.JwtService;
 import io.jsonwebtoken.Claims;
@@ -21,6 +22,7 @@ import java.util.List;
 public class AuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final CacheService cacheService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
