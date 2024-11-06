@@ -1,13 +1,18 @@
 package com.devb.estores.cache;
 
+import com.devb.estores.config.AppEnv;
 import com.devb.estores.model.User;
+import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
 @Configuration
+@AllArgsConstructor
 public class CacheBeanConfig {
+
+    private final AppEnv appEnv;
 
     private <K, V> CacheConfigurer<K, V> configure(String cacheName, Class<K> keyType, Class<V> valueType, int heap, int offHeap, Duration ttl) {
         return CacheConfigurer.<K, V>builder()
@@ -28,5 +33,15 @@ public class CacheBeanConfig {
     @Bean
     CacheConfigurer<String, User> userCache() {
         return this.configure(CacheName.USER_CACHE, String.class, User.class, 20000, 10, Duration.ofDays(1));
+    }
+
+    @Bean
+    CacheConfigurer<String, String> accessTokenCache() {
+        return this.configure(CacheName.ACCESS_TOKEN_CACHE, String.class, String.class, 50000, 10, Duration.ofSeconds(appEnv.getJwt().getAccessExpirationSeconds()));
+    }
+
+    @Bean
+    CacheConfigurer<String, String> refreshTokenCache() {
+        return this.configure(CacheName.REFRESH_TOKEN_CACHE, String.class, String.class, 50000, 10, Duration.ofSeconds(appEnv.getJwt().getRefreshExpirationSeconds()));
     }
 }

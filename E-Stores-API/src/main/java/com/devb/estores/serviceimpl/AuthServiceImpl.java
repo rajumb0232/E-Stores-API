@@ -162,6 +162,8 @@ public class AuthServiceImpl implements AuthService {
 
         long expiration = (tokenType.equals(TokenType.ACCESS)) ? appEnv.getJwt().getAccessExpirationSeconds(): appEnv.getJwt().getRefreshExpirationSeconds();
 
+        String jti = generateJwtId(username, deviceId, tokenType);
+
         TokenPayload tokenPayload = TokenPayload.create()
                 .setSubject(username)
                 .roles(roles)
@@ -171,7 +173,7 @@ public class AuthServiceImpl implements AuthService {
                 .secChaUaMobile(secChUaMobile)
                 .secChaUaPlatform(secChUaPlatform)
                 .userAgent(userAgent)
-                .jwtId(generateJwtId(username, deviceId, tokenType))
+                .jwtId(jti)
                 .build();
 
         String token = (tokenType == TokenType.ACCESS)
@@ -197,19 +199,26 @@ public class AuthServiceImpl implements AuthService {
         ACCESS, REFRESH;
     }
 
+    /**
+     * Generates a new JTI and caches it to respective cache's,
+     * the JTI is cached with the key created by combining username and deviceId.
+     * Like, username + "." + deviceId
+     *
+     *  @param username username of the account.
+     *  @param deviceId deviceId i.e, created for the client device identification.
+     *  @param tokenType the token type to which the JTI is to be created.
+     *  */
     private String generateJwtId(String username, String deviceId, TokenType tokenType) {
-        String sessionId = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        String key = username + "." + deviceId;
 
+        // Caching jti for token identification in future
         switch (tokenType) {
-            case ACCESS -> {
-                // cache jti for access expiration time in accessTokenCache
-            }
-            case REFRESH -> {
-                // cache jti for refresh expiration time in refreshTokenCache
-            }
+            case ACCESS ->  cacheService.doEntry(CacheName.ACCESS_TOKEN_CACHE, key, jti);
+            case REFRESH -> cacheService.doEntry(CacheName.REFRESH_TOKEN_CACHE, key, jti);
         }
 
-        return sessionId;
+        return jti;
     }
 
     @Override
