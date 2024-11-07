@@ -8,11 +8,15 @@ import com.devb.estores.model.TokenIdentification;
 import com.devb.estores.repository.TokenIdentificationRepo;
 import com.devb.estores.service.TokenIdService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @AllArgsConstructor
+@Slf4j
 public class TokenIdServiceImpl implements TokenIdService {
 
     private final TokenIdentificationRepo tokenIdRepo;
@@ -61,6 +65,21 @@ public class TokenIdServiceImpl implements TokenIdService {
     @Override
     @Transactional
     public void deleteAllOtherIds(String username, String currentDeviceId) {
-        tokenIdRepo.deleteAllByUsernameAndDeviceIdNot(username, currentDeviceId);
+        List<TokenIdentification> ids = tokenIdRepo.findAllByUsernameAndDeviceIdNot(username, currentDeviceId);
+
+        if (ids.isEmpty()) {
+            log.info("No tokens found for user '{}' on other devices; nothing to delete.", username);
+            return;
+        }
+
+        ids.forEach(id -> {
+            String key = id.getUsername() + "." + id.getDeviceId();
+            switch (id.getTokenType()){
+                case ACCESS -> cacheService.evictEntry(CacheName.ACCESS_TOKEN_CACHE, key);
+                case REFRESH -> cacheService.evictEntry(CacheName.REFRESH_TOKEN_CACHE, key);
+            }
+            log.info("Evicted {} token from cache for key: {}", id.getTokenType().name(), key);
+        });
+        tokenIdRepo.deleteAll(ids);
     }
 }

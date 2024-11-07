@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface TokenIdentificationRepo extends JpaRepository<TokenIdentification, String> {
@@ -16,5 +17,5 @@ public interface TokenIdentificationRepo extends JpaRepository<TokenIdentificati
 
     void deleteByUsernameAndDeviceIdAndTokenType(String username, String deviceId, TokenType tokenType);
 
-    void deleteAllByUsernameAndDeviceIdNot(String username, String currentDeviceId);
+    List<TokenIdentification> findAllByUsernameAndDeviceIdNot(String username, String currentDeviceId);
 }
