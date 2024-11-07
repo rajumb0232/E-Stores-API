@@ -44,13 +44,13 @@ public class RefreshFilter extends OncePerRequestFilter {
 
             /* Validating jti
              * */
-            log.info("Extracting JTI from both Refresh Token Claims and refresh-token-cache");
+            log.info("Extracting JTI...");
             String jti = jwtService.getJwtId(claims);
             String cachedJti = cacheService.getEntry(CacheName.REFRESH_TOKEN_CACHE, username + "." + deviceId, String.class);
 
-            log.info("Validating refresh token JTI");
+            log.info("Validating JTI in token: {}, and cache: {}", jti, cachedJti);
             if (!jti.equals(cachedJti))
-                throw new InvalidJwtException("Failed to authenticate the refresh token");
+                throw new InvalidJwtException("Failed to authenticate the refresh token, could not identify the token");
 
             /* Setting authentication
              * */
@@ -67,7 +67,7 @@ public class RefreshFilter extends OncePerRequestFilter {
             log.info("Authentication failed | User already logged in");
             FilterHelper.handleException(response, ex.getMessage());
         } catch (InvalidJwtException ex) {
-            log.info("{} | invalid JWT used", ex.getMessage());
+            log.info(ex.getMessage());
             FilterHelper.handleException(response, ex.getMessage());
         }
 

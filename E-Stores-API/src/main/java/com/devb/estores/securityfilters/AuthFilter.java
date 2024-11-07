@@ -44,11 +44,11 @@ public class AuthFilter extends OncePerRequestFilter {
 
             /* Validating jti
              * */
-            log.info("Extracting JTI from both Access Token Claims and access-token-cache");
+            log.info("Extracting JTI...");
             String jti = jwtService.getJwtId(claims);
             String cachedJti = cacheService.getEntry(CacheName.ACCESS_TOKEN_CACHE, username + "." + deviceId, String.class);
 
-            log.info("Validating access token JTI");
+            log.info("Validating JTI in token: {}, and cache: {}", jti, cachedJti);
             if (!jti.equals(cachedJti))
                 throw new InvalidJwtException("Failed to authenticate the access token");
 
