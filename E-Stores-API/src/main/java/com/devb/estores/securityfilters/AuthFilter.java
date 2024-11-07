@@ -44,7 +44,7 @@ public class AuthFilter extends OncePerRequestFilter {
 
             /* Validating jti
              * */
-            log.info("Extracting JTI...");
+            log.info("Extracting JTI with key: {}", username + "." + deviceId);
             String jti = jwtService.getJwtId(claims);
             String cachedJti = cacheService.getEntry(CacheName.ACCESS_TOKEN_CACHE, username + "." + deviceId, String.class);
 
