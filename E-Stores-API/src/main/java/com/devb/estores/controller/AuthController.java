@@ -66,10 +66,8 @@ public class AuthController extends ResponseEntityExceptionHandler {
 
     @PostMapping("/logout")
     @PreAuthorize("hasAuthority('ADMIN') OR hasAuthority('SUPER_ADMIN') OR hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
-    public ResponseEntity<SimpleResponseStructure> logout(@CookieValue(name = "rt", required = false) String refreshToken,
-                                                          @CookieValue(name = "at", required = false) String accessToken) {
-        authService.logout(refreshToken, accessToken);
-        HttpHeaders headers = authService.invalidateTokens();
+    public ResponseEntity<SimpleResponseStructure> logout(@CookieValue(name = "at", required = false) String accessToken) {
+        HttpHeaders headers = authService.logout(accessToken);
         return responseBuilder.success(HttpStatus.OK, headers, "Logout Successful");
     }
 

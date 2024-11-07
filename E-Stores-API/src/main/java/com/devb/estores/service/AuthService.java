@@ -17,7 +17,7 @@ public interface AuthService {
 
     HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent);
 
-    void logout(String refreshToken, String accessToken);
+    HttpHeaders logout(String accessToken);
 
     HttpHeaders invalidateTokens();
 

@@ -19,6 +19,7 @@ import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.TokenPayload;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.service.AuthService;
+import com.devb.estores.service.TokenIdService;
 import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -53,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final AppEnv appEnv;
     private final CacheService cacheService;
     private final TokenIdentificationRepo tokenIdRepo;
+    private final TokenIdService tokenIdService;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
@@ -278,8 +280,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(String refreshToken, String accessToken) {
-        // should drop old token session IDs
+    public HttpHeaders logout(String accessToken) {
+        Claims claims = jwtService.extractClaims(accessToken);
+        String username = jwtService.getUsername(claims);
+        String deviceId = jwtService.getJwtId(claims);
+
+        /* Deleting the JTI in cache and database
+        * */
+        tokenIdService.deleteJti(username, deviceId);
+
+        /* Configuring Invalid cookies to replace and remove the existing client cookies
+        * */
+        return this.invalidateTokens();
     }
 
     @Override
@@ -287,6 +299,7 @@ public class AuthServiceImpl implements AuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("at"));
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("rt"));
+        headers.add(HttpHeaders.SET_COOKIE, cookieManager.invalidate("did"));
 
         return headers;
     }

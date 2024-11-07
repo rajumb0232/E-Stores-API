@@ -47,4 +47,13 @@ public class TokenIdServiceImpl implements TokenIdService {
             return cacheService.getEntry(CacheName.REFRESH_TOKEN_CACHE, cacheKey, String.class);
         else return null;
     }
+
+    @Override
+    public void deleteJti(String username, String deviceId) {
+        String key = username + "." + deviceId;
+        tokenIdRepo.deleteByUsernameAndDeviceIdAndTokenType(username, deviceId, TokenType.ACCESS);
+        tokenIdRepo.deleteByUsernameAndDeviceIdAndTokenType(username, deviceId, TokenType.ACCESS);
+        cacheService.evictEntry(CacheName.ACCESS_TOKEN_CACHE, key);
+        cacheService.evictEntry(CacheName.REFRESH_TOKEN_CACHE, key);
+    }
 }
