@@ -305,12 +305,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void revokeAllOtherTokens(String refreshToken, String accessToken) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    public void revokeAllOtherTokens(String accessToken, String deviceId) {
+        Claims claims = jwtService.extractClaims(accessToken);
+        String username = jwtService.getUsername(claims);
 
-        userRepo.findByUsername(username).ifPresent(user -> {
-            // should drop old token session IDs
-        });
+        tokenIdService.deleteAllOtherIds(username, deviceId);
     }
 
     @Override

@@ -86,9 +86,9 @@ public class AuthController extends ResponseEntityExceptionHandler {
 
     @PostMapping("/revoke-other")
     @PreAuthorize("hasAuthority('ADMIN') OR hasAuthority('SUPER_ADMIN') OR hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
-    public ResponseEntity<SimpleResponseStructure> revokeAllOtherTokens(@CookieValue(name = "rt", required = false) String refreshToken,
-                                                                        @CookieValue(name = "at", required = false) String accessToken) {
-        authService.revokeAllOtherTokens(refreshToken, accessToken);
+    public ResponseEntity<SimpleResponseStructure> revokeAllOtherTokens(@CookieValue(name = "at", required = false) String accessToken,
+                                                                        @CookieValue(name = "did", required = false) String deviceId) {
+        authService.revokeAllOtherTokens(accessToken, deviceId);
         return responseBuilder.success(HttpStatus.OK, "Successfully revoked all other device access");
     }
 

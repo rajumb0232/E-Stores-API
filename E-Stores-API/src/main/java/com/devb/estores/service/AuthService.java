@@ -23,7 +23,7 @@ public interface AuthService {
 
     AuthResponse refreshLogin(String refreshToken, String accessToken);
 
-    void revokeAllOtherTokens(String refreshToken, String accessToken);
+    void revokeAllOtherTokens(String accessToken, String deviceId);
 
     void revokeAllTokens();
 }

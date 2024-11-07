@@ -9,6 +9,7 @@ import com.devb.estores.repository.TokenIdentificationRepo;
 import com.devb.estores.service.TokenIdService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
@@ -55,5 +56,11 @@ public class TokenIdServiceImpl implements TokenIdService {
         tokenIdRepo.deleteByUsernameAndDeviceIdAndTokenType(username, deviceId, TokenType.ACCESS);
         cacheService.evictEntry(CacheName.ACCESS_TOKEN_CACHE, key);
         cacheService.evictEntry(CacheName.REFRESH_TOKEN_CACHE, key);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllOtherIds(String username, String currentDeviceId) {
+        tokenIdRepo.deleteAllByUsernameAndDeviceIdNot(username, currentDeviceId);
     }
 }

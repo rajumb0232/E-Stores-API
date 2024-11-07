@@ -15,4 +15,6 @@ public interface TokenIdentificationRepo extends JpaRepository<TokenIdentificati
     Page<TokenIdentification> findByExpirationBefore(LocalDateTime now, Pageable pageable);
 
     void deleteByUsernameAndDeviceIdAndTokenType(String username, String deviceId, TokenType tokenType);
+
+    void deleteAllByUsernameAndDeviceIdNot(String username, String currentDeviceId);
 }
