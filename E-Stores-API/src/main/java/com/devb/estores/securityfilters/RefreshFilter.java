@@ -2,9 +2,11 @@ package com.devb.estores.securityfilters;
 
 import com.devb.estores.cache.CacheName;
 import com.devb.estores.cache.CacheService;
+import com.devb.estores.enums.TokenType;
 import com.devb.estores.exceptions.InvalidJwtException;
 import com.devb.estores.exceptions.UserNotLoggedInException;
 import com.devb.estores.security.JwtService;
+import com.devb.estores.service.TokenIdService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -25,6 +27,7 @@ public class RefreshFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CacheService cacheService;
+    private final TokenIdService tokenIdService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -46,7 +49,8 @@ public class RefreshFilter extends OncePerRequestFilter {
              * */
             log.info("Extracting JTI with key: {}", username + "." + deviceId);
             String jti = jwtService.getJwtId(claims);
-            String cachedJti = cacheService.getEntry(CacheName.REFRESH_TOKEN_CACHE, username + "." + deviceId, String.class);
+            String cachedJti = tokenIdService.getJti(username, deviceId, TokenType.REFRESH);
+//                    cacheService.getEntry(CacheName.REFRESH_TOKEN_CACHE, username + "." + deviceId, String.class);
 
             log.info("Validating JTI in token: {}, and cache: {}", jti, cachedJti);
             if (!jti.equals(cachedJti))

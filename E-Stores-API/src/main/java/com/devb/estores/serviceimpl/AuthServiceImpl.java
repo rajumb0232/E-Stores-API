@@ -8,7 +8,9 @@ import com.devb.estores.dto.OtpModel;
 import com.devb.estores.enums.TokenType;
 import com.devb.estores.enums.UserRole;
 import com.devb.estores.exceptions.*;
+import com.devb.estores.model.TokenIdentification;
 import com.devb.estores.model.User;
+import com.devb.estores.repository.TokenIdentificationRepo;
 import com.devb.estores.repository.UserRepo;
 import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
@@ -33,6 +35,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -49,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final Random random;
     private final AppEnv appEnv;
     private final CacheService cacheService;
+    private final TokenIdentificationRepo tokenIdRepo;
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
     public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
@@ -211,11 +215,27 @@ public class AuthServiceImpl implements AuthService {
 
         // Caching jti for token identification in future
         switch (tokenType) {
-            case ACCESS ->  cacheService.doEntry(CacheName.ACCESS_TOKEN_CACHE, key, jti);
-            case REFRESH -> cacheService.doEntry(CacheName.REFRESH_TOKEN_CACHE, key, jti);
+            case ACCESS -> {
+                this.saveJtiForBackup(username, deviceId, tokenType, jti, LocalDateTime.now().plusSeconds(appEnv.getJwt().getAccessExpirationSeconds()));
+                cacheService.doEntry(CacheName.ACCESS_TOKEN_CACHE, key, jti);
+            }
+            case REFRESH -> {
+                this.saveJtiForBackup(username, deviceId, tokenType, jti, LocalDateTime.now().plusSeconds(appEnv.getJwt().getRefreshExpirationSeconds()));
+                cacheService.doEntry(CacheName.REFRESH_TOKEN_CACHE, key, jti);
+            }
         }
 
         return jti;
+    }
+
+    private void saveJtiForBackup(String username, String deviceId, TokenType tokenType, String jti, LocalDateTime expiration) {
+        tokenIdRepo.save(TokenIdentification.builder()
+                .username(username)
+                .deviceId(deviceId)
+                .tokenType(tokenType)
+                .jti(jti)
+                .expiration(expiration)
+                .build());
     }
 
     @Override
