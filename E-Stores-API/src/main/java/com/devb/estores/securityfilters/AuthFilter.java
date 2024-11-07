@@ -30,7 +30,9 @@ public class AuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("Authenticating AccessToken with JWT Filter...");
         String accessToken = FilterHelper.extractCookie("at", request.getCookies());
+
         String deviceId = FilterHelper.extractDeviceId(request.getCookies());
+        log.info("Is device Id found? => {}", deviceId != null);
 
         if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
         try {
@@ -63,6 +65,9 @@ public class AuthFilter extends OncePerRequestFilter {
         } catch (UserNotLoggedInException ex) {
             log.info("Authentication failed | User not logged in");
             FilterHelper.handleException(response, "User not logged in | send a refresh request or try again after clearing cookies");
+        }catch (InvalidJwtException ex) {
+            log.info("{} | invalid JWT used", ex.getMessage());
+            FilterHelper.handleException(response, ex.getMessage());
         }
 
     }

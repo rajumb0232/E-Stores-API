@@ -145,7 +145,7 @@ public class AuthServiceImpl implements AuthService {
                     headers, TokenType.ACCESS);
 
             log.info("Generating new device identifier...");
-            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, appEnv.getJwt().getAccessExpirationSeconds()));
+            headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure("did", newDeviceId, appEnv.getJwt().getRefreshExpirationSeconds()));
 
             /* Generating a new refresh Token whenever a new Access Token is used for Token Rotation mechanism.
              * */

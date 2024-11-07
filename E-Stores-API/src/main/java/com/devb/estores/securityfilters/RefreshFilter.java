@@ -30,7 +30,9 @@ public class RefreshFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("Authenticating RefreshToken with Refresh Filter...");
         String rt = FilterHelper.extractCookie("rt", request.getCookies());
+
         String deviceId = FilterHelper.extractDeviceId(request.getCookies());
+        log.info("Is device Id found? => {}", deviceId != null);
 
         if (rt == null) throw new UserNotLoggedInException("User not logged in | no credentials found");
         try {
@@ -55,6 +57,8 @@ public class RefreshFilter extends OncePerRequestFilter {
             FilterHelper.setAuthentication(username, roles, request);
             log.info("JWT Authentication Successful");
 
+        filterChain.doFilter(request, response);
+
         } catch (ExpiredJwtException ex) {
             FilterHelper.handleException(response, "Your refreshToken is expired, try login again");
         } catch (JwtException ex) {
@@ -62,8 +66,10 @@ public class RefreshFilter extends OncePerRequestFilter {
         } catch (UserNotLoggedInException ex) {
             log.info("Authentication failed | User already logged in");
             FilterHelper.handleException(response, ex.getMessage());
+        } catch (InvalidJwtException ex) {
+            log.info("{} | invalid JWT used", ex.getMessage());
+            FilterHelper.handleException(response, ex.getMessage());
         }
 
-        filterChain.doFilter(request, response);
     }
 }
