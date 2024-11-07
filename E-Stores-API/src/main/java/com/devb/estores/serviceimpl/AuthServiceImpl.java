@@ -5,6 +5,7 @@ import com.devb.estores.cache.CacheService;
 import com.devb.estores.config.AppEnv;
 import com.devb.estores.dto.MessageData;
 import com.devb.estores.dto.OtpModel;
+import com.devb.estores.enums.TokenType;
 import com.devb.estores.enums.UserRole;
 import com.devb.estores.exceptions.*;
 import com.devb.estores.model.User;
@@ -193,10 +194,6 @@ public class AuthServiceImpl implements AuthService {
             return secChUa.substring(start, end);
         } else
             return null;
-    }
-
-    private enum TokenType {
-        ACCESS, REFRESH;
     }
 
     /**
