@@ -52,8 +52,6 @@ public class AuthServiceImpl implements AuthService {
     private final CacheService cacheService;
     private final TokenIdService tokenIdService;
 
-    public static final String FAILED_REFRESH = "Failed to refresh login";
-    public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
 
     @Override
     public String registerUser(UserRequest userRequest, UserRole role) {
@@ -77,6 +75,8 @@ public class AuthServiceImpl implements AuthService {
             throw new EmailNotFoundException("Failed to verify the email ID");
         }
     }
+
+    public static final String FAILED_OTP_VERIFICATION = "Failed to verify OTP";
 
     @Override
     public UserResponse verifyUserEmail(OtpModel otpModel) {
@@ -197,6 +197,8 @@ public class AuthServiceImpl implements AuthService {
         } else
             return null;
     }
+
+    public static final String FAILED_REFRESH = "Failed to refresh login";
 
     @Override
     public AuthResponse refreshLogin(String refreshToken, String accessToken) {
