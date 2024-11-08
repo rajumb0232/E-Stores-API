@@ -2,6 +2,7 @@ package com.devb.estores.serviceimpl;
 
 import com.devb.estores.cache.CacheName;
 import com.devb.estores.cache.CacheService;
+import com.devb.estores.config.AppEnv;
 import com.devb.estores.enums.TokenType;
 import com.devb.estores.exceptions.InvalidJwtException;
 import com.devb.estores.model.TokenIdentification;
@@ -12,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -21,6 +24,46 @@ public class TokenIdServiceImpl implements TokenIdService {
 
     private final TokenIdentificationRepo tokenIdRepo;
     private final CacheService cacheService;
+    private final AppEnv appEnv;
+
+    /**
+     * Generates a new JTI and caches it to respective cache's,
+     * the JTI is cached with the key created by combining username and deviceId.
+     * Like, username + "." + deviceId
+     *
+     *  @param username username of the account.
+     *  @param deviceId deviceId i.e, created for the client device identification.
+     *  @param tokenType the token type to which the JTI is to be created.
+     *  */
+    @Override
+    public String generateJwtId(String username, String deviceId, TokenType tokenType) {
+        String jti = UUID.randomUUID().toString();
+        String key = username + "." + deviceId;
+
+        // Caching jti for token identification in future
+        switch (tokenType) {
+            case ACCESS -> {
+                this.saveJtiForBackup(username, deviceId, tokenType, jti, LocalDateTime.now().plusSeconds(appEnv.getJwt().getAccessExpirationSeconds()));
+                cacheService.doEntry(CacheName.ACCESS_TOKEN_CACHE, key, jti);
+            }
+            case REFRESH -> {
+                this.saveJtiForBackup(username, deviceId, tokenType, jti, LocalDateTime.now().plusSeconds(appEnv.getJwt().getRefreshExpirationSeconds()));
+                cacheService.doEntry(CacheName.REFRESH_TOKEN_CACHE, key, jti);
+            }
+        }
+
+        return jti;
+    }
+
+    private void saveJtiForBackup(String username, String deviceId, TokenType tokenType, String jti, LocalDateTime expiration) {
+        tokenIdRepo.save(TokenIdentification.builder()
+                .username(username)
+                .deviceId(deviceId)
+                .tokenType(tokenType)
+                .jti(jti)
+                .expiration(expiration)
+                .build());
+    }
 
     @Override
     public String getJti(String username, String deviceId, TokenType tokenType) {
