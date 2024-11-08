@@ -17,7 +17,7 @@ import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.TokenPayload;
 import com.devb.estores.security.JwtService;
-import com.devb.estores.securityfilters.FilterHelper;
+import com.devb.estores.security.RequestUtils;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.service.TokenIdService;
 import com.devb.estores.util.CookieManager;
@@ -142,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
     public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
         String newDeviceId = UUID.randomUUID().toString();
-        String browser = FilterHelper.extractBrowserName(secChUa);
+        String browser = RequestUtils.extractBrowserName(secChUa);
 
         /* Generating Access Token, Refresh Token, and new Device Identifier if the access token is required.
          * The Access Token is required when the expiration of authResponse is the default expire duration

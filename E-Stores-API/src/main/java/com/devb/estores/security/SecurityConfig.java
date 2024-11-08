@@ -1,7 +1,7 @@
 package com.devb.estores.security;
 
 import com.devb.estores.securityfilters.AuthFilter;
-import com.devb.estores.securityfilters.FilterHelper;
+import com.devb.estores.securityfilters.JwtAuthenticationHelper;
 import com.devb.estores.securityfilters.LoginFilter;
 import com.devb.estores.securityfilters.RefreshFilter;
 import lombok.AllArgsConstructor;
@@ -29,7 +29,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final CorsConfigurationSource corsSource;
-    private final FilterHelper filterHelper;
+    private final JwtAuthenticationHelper authenticationHelper;
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -98,7 +98,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/refresh/**"))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new RefreshFilter(filterHelper), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new RefreshFilter( authenticationHelper), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -111,7 +111,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new AuthFilter(filterHelper), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter( authenticationHelper), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

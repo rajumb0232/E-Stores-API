@@ -2,6 +2,7 @@ package com.devb.estores.securityfilters;
 
 import com.devb.estores.exceptions.InvalidJwtException;
 import com.devb.estores.exceptions.UserNotLoggedInException;
+import com.devb.estores.security.RequestUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -19,42 +20,42 @@ import java.io.IOException;
 @AllArgsConstructor
 public class AuthFilter extends OncePerRequestFilter {
 
-    private final FilterHelper filterHelper;
+    private final JwtAuthenticationHelper authenticationHelper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("Authenticating AccessToken with JWT Filter...");
-        String accessToken = FilterHelper.extractCookie("at", request.getCookies());
+        String accessToken = RequestUtils.extractCookie("at", request.getCookies());
 
-        String deviceId = FilterHelper.extractDeviceId(request.getCookies());
+        String deviceId = RequestUtils.extractDeviceId(request.getCookies());
         log.info("Is device Id found? => {}", deviceId != null);
 
         if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
         try {
-            String browserName = FilterHelper.extractBrowserName(request.getHeader(FilterHelper.SEC_CH_UA));
-            UserDetails userDetails = filterHelper.authenticateToken(accessToken,
+            String browserName = RequestUtils.extractBrowserName(request.getHeader(RequestUtils.SEC_CH_UA));
+            UserDetails userDetails = authenticationHelper.authenticateToken(accessToken,
                     deviceId,
                     browserName,
-                    request.getHeader(FilterHelper.SEC_CH_UA_PLATFORM),
-                    request.getHeader(FilterHelper.SEC_CH_UA_MOBILE),
-                    request.getHeader(FilterHelper.USER_AGENT));
+                    request.getHeader(RequestUtils.SEC_CH_UA_PLATFORM),
+                    request.getHeader(RequestUtils.SEC_CH_UA_MOBILE),
+                    request.getHeader(RequestUtils.USER_AGENT));
 
             /* Setting authentication
              * */
-            FilterHelper.setAuthentication(userDetails, request);
+            authenticationHelper.setAuthentication(userDetails, request);
             log.info("Authentication Successful");
 
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
-            FilterHelper.handleException(response, "Your AccessToken is expired, refresh your login");
+            RequestUtils.handleException(response, "Your AccessToken is expired, refresh your login");
         } catch (JwtException ex) {
-            FilterHelper.handleException(response, "Authentication Failed | " + ex.getMessage());
+            RequestUtils.handleException(response, "Authentication Failed | " + ex.getMessage());
         } catch (UserNotLoggedInException ex) {
             log.info("Authentication failed | User not logged in");
-            FilterHelper.handleException(response, "User not logged in | send a refresh request or try again after clearing cookies");
+            RequestUtils.handleException(response, "User not logged in | send a refresh request or try again after clearing cookies");
         }catch (InvalidJwtException ex) {
             log.info("{} | invalid JWT used", ex.getMessage());
-            FilterHelper.handleException(response, ex.getMessage());
+            RequestUtils.handleException(response, ex.getMessage());
         }
 
     }
