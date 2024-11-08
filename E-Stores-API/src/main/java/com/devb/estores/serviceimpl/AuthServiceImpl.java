@@ -198,7 +198,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse refreshLogin(String refreshToken, String accessToken) {
         if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
-        Claims claims = jwtService.extractClaims(refreshToken);
+        Claims claims = jwtService.extractClaimsOrThrow(refreshToken);
         String username = jwtService.getUsername(claims);
         Date refreshExpiration = jwtService.getExpiry(claims);
         Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
@@ -222,7 +222,7 @@ public class AuthServiceImpl implements AuthService {
 
     private Date getAccessExpiration(String token) {
         try {
-            Claims claims = jwtService.extractClaims(token);
+            Claims claims = jwtService.extractClaimsOrThrow(token);
             return jwtService.getExpiry(claims);
         } catch (JwtException ex) {
             return null;
@@ -235,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public HttpHeaders logout(String accessToken) {
-        Claims claims = jwtService.extractClaims(accessToken);
+        Claims claims = jwtService.extractClaimsOrThrow(accessToken);
         String username = jwtService.getUsername(claims);
         String deviceId = jwtService.getJwtId(claims);
 
@@ -260,7 +260,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void revokeAllOtherTokens(String accessToken, String deviceId) {
-        Claims claims = jwtService.extractClaims(accessToken);
+        Claims claims = jwtService.extractClaimsOrThrow(accessToken);
         String username = jwtService.getUsername(claims);
 
         tokenIdService.deleteAllOtherIds(username, deviceId);

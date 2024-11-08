@@ -1,6 +1,7 @@
 package com.devb.estores.security;
 
 import com.devb.estores.config.AppEnv;
+import com.devb.estores.exceptions.InvalidJwtException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 
 
 @Slf4j
@@ -60,6 +62,13 @@ public class JwtService {
             // Returning null to handle as per requirement
             return null;
         }
+    }
+
+    public Claims extractClaimsOrThrow(String token) {
+        Claims claims = extractClaims(token);
+        if(claims == null)
+            throw new InvalidJwtException("Failed to parse the token");
+        return claims;
     }
 
     public String getUsername(Claims claims) {
