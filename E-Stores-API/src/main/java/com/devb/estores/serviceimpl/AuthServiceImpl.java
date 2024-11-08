@@ -201,7 +201,9 @@ public class AuthServiceImpl implements AuthService {
         Claims claims = jwtService.extractClaimsOrThrow(refreshToken);
         String username = jwtService.getUsername(claims);
         Date refreshExpiration = jwtService.getExpiry(claims);
-        Date accessExpiration = accessToken != null ? this.getAccessExpiration(accessToken) : null;
+
+        Claims accessClaims = jwtService.extractClaimsOrThrow(accessToken);
+        Date accessExpiration = jwtService.getExpiry(accessClaims);
 
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
@@ -218,15 +220,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return this.generateAuthResponse(user, evaluatedAccessExpiration, evaluatedRefreshExpiration);
-    }
-
-    private Date getAccessExpiration(String token) {
-        try {
-            Claims claims = jwtService.extractClaimsOrThrow(token);
-            return jwtService.getExpiry(claims);
-        } catch (JwtException ex) {
-            return null;
-        }
     }
 
     private long getLeftOverSeconds(long expiryDuration, Date tokenExpiration) {

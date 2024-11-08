@@ -8,6 +8,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -58,13 +59,13 @@ public class JwtService {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (JwtException e){
+        } catch (JwtException | IllegalArgumentException e){
             // Returning null to handle as per requirement
             return null;
         }
     }
 
-    public Claims extractClaimsOrThrow(String token) {
+    public Claims extractClaimsOrThrow(String token) throws InvalidJwtException {
         Claims claims = extractClaims(token);
         if(claims == null)
             throw new InvalidJwtException("Failed to parse the token");
