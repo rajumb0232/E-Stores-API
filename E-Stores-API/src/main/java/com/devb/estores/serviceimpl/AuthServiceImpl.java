@@ -8,6 +8,7 @@ import com.devb.estores.dto.OtpModel;
 import com.devb.estores.enums.TokenType;
 import com.devb.estores.enums.UserRole;
 import com.devb.estores.exceptions.*;
+import com.devb.estores.mapper.UserMapper;
 import com.devb.estores.model.User;
 import com.devb.estores.repository.UserRepo;
 import com.devb.estores.requestdto.AuthRequest;
@@ -51,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final AppEnv appEnv;
     private final CacheService cacheService;
     private final TokenIdService tokenIdService;
+    private final UserMapper userMapper;
 
 
     @Override
@@ -59,7 +61,10 @@ public class AuthServiceImpl implements AuthService {
         if (userRepo.existsByEmail(userRequest.getEmail()))
             throw new UserAlreadyExistsByEmailException("Failed To register the User");
 
-        User user = mapToUserEntity(userRequest, role);
+        User user = userMapper.mapToUserEntity(userRequest, role);
+
+        // encoding the password
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         // caching user data
         cacheService.doEntry(CacheName.USER_CACHE, user.getEmail(), user);
@@ -95,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             sendConfirmationMail(user);
-            return mapToUserResponse(user);
+            return userMapper.mapToUserResponse(user);
         } catch (MessagingException e) {
             throw new EmailNotFoundException("Failed to send confirmation mail");
         }
@@ -118,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("The given credentials are incorrect");
 
         return userRepo.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+                .orElseThrow(() -> new UsernameNotFoundException("Failed to Authenticate User"));
     }
 
     private AuthResponse generateAuthResponse(User user, long accessExpiryInSeconds, long refreshExpirySeconds) {
@@ -277,27 +282,6 @@ public class AuthServiceImpl implements AuthService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         tokenIdService.deleteAllIds(username);
-    }
-
-    private UserResponse mapToUserResponse(User user) {
-        return UserResponse.builder()
-                .userId(user.getUserId())
-                .username(user.getUsername())
-                .roles(user.getRoles().stream().map(UserRole::name).toList())
-                .email(user.getEmail())
-                .isEmailVerified(user.isEmailVerified())
-                .build();
-    }
-
-    private User mapToUserEntity(UserRequest userRequest, UserRole role) {
-        return User.builder()
-                .username(userRequest.getEmail().split("@gmail.com")[0])
-                .email(userRequest.getEmail())
-                .password(passwordEncoder.encode(userRequest.getPassword()))
-                .roles(role.equals(UserRole.SELLER)
-                        ? Arrays.asList(UserRole.SELLER, UserRole.CUSTOMER)
-                        : List.of(UserRole.CUSTOMER))
-                .build();
     }
 
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
