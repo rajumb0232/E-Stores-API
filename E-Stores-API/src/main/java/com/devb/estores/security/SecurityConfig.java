@@ -1,10 +1,9 @@
 package com.devb.estores.security;
 
-import com.devb.estores.cache.CacheService;
 import com.devb.estores.securityfilters.AuthFilter;
+import com.devb.estores.securityfilters.FilterHelper;
 import com.devb.estores.securityfilters.LoginFilter;
 import com.devb.estores.securityfilters.RefreshFilter;
-import com.devb.estores.service.TokenIdService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,10 +28,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @AllArgsConstructor
 public class SecurityConfig {
 
-    private final JwtService jwtService;
     private final CorsConfigurationSource corsSource;
-    private final CacheService cacheService;
-    private final TokenIdService tokenIdService;
+    private final FilterHelper filterHelper;
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -101,7 +98,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/refresh/**"))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new RefreshFilter(jwtService, cacheService, tokenIdService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new RefreshFilter(filterHelper), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -114,7 +111,7 @@ public class SecurityConfig {
                 .securityMatchers(matcher -> matcher.requestMatchers("/api/fkv1/**"))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new AuthFilter(jwtService, cacheService, tokenIdService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter(filterHelper), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

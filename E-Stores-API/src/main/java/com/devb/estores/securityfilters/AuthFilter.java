@@ -1,13 +1,7 @@
 package com.devb.estores.securityfilters;
 
-import com.devb.estores.cache.CacheName;
-import com.devb.estores.cache.CacheService;
-import com.devb.estores.enums.TokenType;
 import com.devb.estores.exceptions.InvalidJwtException;
 import com.devb.estores.exceptions.UserNotLoggedInException;
-import com.devb.estores.security.JwtService;
-import com.devb.estores.service.TokenIdService;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -20,15 +14,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Slf4j
 @AllArgsConstructor
 public class AuthFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
-    private final CacheService cacheService;
-    private final TokenIdService tokenIdService;
     private final FilterHelper filterHelper;
 
     @Override
