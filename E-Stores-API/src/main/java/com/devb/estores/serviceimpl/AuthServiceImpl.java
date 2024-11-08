@@ -316,9 +316,7 @@ public class AuthServiceImpl implements AuthService {
     public void revokeAllTokens() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        userRepo.findByUsername(username).ifPresent(user -> {
-            // should drop old token session IDs
-        });
+        tokenIdService.deleteAllIds(username);
     }
 
     private UserResponse mapToUserResponse(User user) {

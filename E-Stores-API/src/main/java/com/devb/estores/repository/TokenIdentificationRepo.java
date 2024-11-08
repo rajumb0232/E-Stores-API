@@ -18,4 +18,6 @@ public interface TokenIdentificationRepo extends JpaRepository<TokenIdentificati
     void deleteByUsernameAndDeviceIdAndTokenType(String username, String deviceId, TokenType tokenType);
 
     List<TokenIdentification> findAllByUsernameAndDeviceIdNot(String username, String currentDeviceId);
+
+    List<TokenIdentification> findAllByUsername(String username);
 }

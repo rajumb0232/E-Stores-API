@@ -9,4 +9,6 @@ public interface TokenIdService {
     void deleteJti(String username, String deviceId);
 
     void deleteAllOtherIds(String username, String currentDeviceId);
+
+    void deleteAllIds(String username);
 }

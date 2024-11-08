@@ -72,6 +72,17 @@ public class TokenIdServiceImpl implements TokenIdService {
             return;
         }
 
+        this.evictCachesForListOfIds(ids);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllIds(String username) {
+        List<TokenIdentification> ids = tokenIdRepo.findAllByUsername(username);
+        this.evictCachesForListOfIds(ids);
+    }
+
+    private void evictCachesForListOfIds(List<TokenIdentification> ids) {
         ids.forEach(id -> {
             String key = id.getUsername() + "." + id.getDeviceId();
             switch (id.getTokenType()){
