@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class AuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CacheService cacheService;
     private final TokenIdService tokenIdService;
+    private final FilterHelper filterHelper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -39,26 +41,17 @@ public class AuthFilter extends OncePerRequestFilter {
 
         if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
         try {
-            log.info("Extracting credentials...");
-
-            Claims claims = jwtService.extractClaims(accessToken);
-            String username = jwtService.getUsername(claims);
-            List<String> roles = jwtService.getUserRoles(claims);
-
-            /* Validating jti
-             * */
-            log.info("Extracting JTI with key: {}", username + "." + deviceId);
-            String jti = jwtService.getJwtId(claims);
-            String cachedJti = tokenIdService.getJti(username, deviceId, TokenType.ACCESS);
-//                    cacheService.getEntry(CacheName.ACCESS_TOKEN_CACHE, username + "." + deviceId, String.class);
-
-            log.info("Validating JTI in token: {}, and cache: {}", jti, cachedJti);
-            if (!jti.equals(cachedJti))
-                throw new InvalidJwtException("Failed to authenticate the access token");
+            String browserName = FilterHelper.extractBrowserName(request.getHeader(FilterHelper.SEC_CH_UA));
+            UserDetails userDetails = filterHelper.authenticateToken(accessToken,
+                    deviceId,
+                    browserName,
+                    request.getHeader(FilterHelper.SEC_CH_UA_PLATFORM),
+                    request.getHeader(FilterHelper.SEC_CH_UA_MOBILE),
+                    request.getHeader(FilterHelper.USER_AGENT));
 
             /* Setting authentication
              * */
-            FilterHelper.setAuthentication(username, roles, request);
+            FilterHelper.setAuthentication(userDetails, request);
             log.info("Authentication Successful");
 
             filterChain.doFilter(request, response);

@@ -17,6 +17,7 @@ import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
 import com.devb.estores.security.TokenPayload;
 import com.devb.estores.security.JwtService;
+import com.devb.estores.securityfilters.FilterHelper;
 import com.devb.estores.service.AuthService;
 import com.devb.estores.service.TokenIdService;
 import com.devb.estores.util.CookieManager;
@@ -141,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
     public HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent) {
         HttpHeaders headers = new HttpHeaders();
         String newDeviceId = UUID.randomUUID().toString();
-        String browser = this.extractBrowserName(secChUa);
+        String browser = FilterHelper.extractBrowserName(secChUa);
 
         /* Generating Access Token, Refresh Token, and new Device Identifier if the access token is required.
          * The Access Token is required when the expiration of authResponse is the default expire duration
@@ -189,18 +190,6 @@ public class AuthServiceImpl implements AuthService {
                 : jwtService.generateRefreshToken(tokenPayload);
 
         headers.add(HttpHeaders.SET_COOKIE, cookieManager.configure(tokenType == TokenType.ACCESS ? "at" : "rt", token, expiration));
-    }
-
-    /**
-     * Helps in extracting the browser name from the given secChUa
-     */
-    private String extractBrowserName(String secChUa) {
-        if (secChUa != null) {
-            int start = secChUa.indexOf('"') + 1;
-            int end = secChUa.indexOf("\"", start);
-            return secChUa.substring(start, end);
-        } else
-            return null;
     }
 
     public static final String FAILED_REFRESH = "Failed to refresh login";
