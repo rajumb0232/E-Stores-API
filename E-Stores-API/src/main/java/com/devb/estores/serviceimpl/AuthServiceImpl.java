@@ -223,7 +223,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private long getLeftOverSeconds(long expiryDuration, Date tokenExpiration) {
-        return expiryDuration - ((new Date().getTime() - tokenExpiration.getTime()) / 1000);
+        long remainingSeconds = (tokenExpiration.getTime() - new Date().getTime()) / 1000;
+        return Math.max(remainingSeconds, 0);
     }
 
     @Override
