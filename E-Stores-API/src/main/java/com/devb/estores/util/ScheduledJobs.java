@@ -16,7 +16,7 @@ public class ScheduledJobs {
 
     private final TokenIdentificationRepo tokenIdRepo;
 
-    @Scheduled(fixedDelay = 60 * 60 * 1000L)
+    @Scheduled(fixedRate = 60 * 60 * 1000L)
     public void deleteAllExpiredAccessTokens() {
         log.info("Deleting the token Id's by batch");
         try {
