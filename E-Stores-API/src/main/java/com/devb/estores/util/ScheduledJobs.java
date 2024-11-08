@@ -17,8 +17,8 @@ public class ScheduledJobs {
     private final TokenIdentificationRepo tokenIdRepo;
 
     @Scheduled(fixedRate = 60 * 60 * 1000L)
-    public void deleteAllExpiredAccessTokens() {
-        log.info("Deleting the token Id's by batch");
+    public void deleteAllExpiredTokenIds() {
+        log.info("Deleting the token Id's in batch");
         try {
             LocalDateTime now = LocalDateTime.now();
             int batchSize = 1000;
@@ -31,7 +31,7 @@ public class ScheduledJobs {
                 if (!pageOfTokens.isEmpty()) {
                     tokenIdRepo.deleteAll(pageOfTokens);
                     deletedCount = pageOfTokens.getNumberOfElements();
-                    log.info("Deleted {} expired access tokens in this batch.", deletedCount);
+                    log.info("Deleted {} expired token Id's in this batch.", deletedCount);
                 }
 
                 page++;
