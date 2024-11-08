@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 public class AppEnv {
 
     private String baseURL;
+    private String domain;
+    private boolean isHttps;
     private Jwt jwt;
 
     @Getter
