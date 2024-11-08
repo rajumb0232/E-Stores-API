@@ -3,8 +3,6 @@ package com.devb.estores.securityfilters;
 import com.devb.estores.exceptions.InvalidJwtException;
 import com.devb.estores.exceptions.UserNotLoggedInException;
 import com.devb.estores.security.RequestUtils;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,12 +43,7 @@ public class RefreshFilter extends OncePerRequestFilter {
             authenticationHelper.setAuthentication(userDetails, request);
             log.info("JWT Authentication Successful");
 
-        filterChain.doFilter(request, response);
-
-        } catch (ExpiredJwtException ex) {
-            RequestUtils.handleException(response, "Your refreshToken is expired, try login again");
-        } catch (JwtException ex) {
-            RequestUtils.handleException(response, "Authentication Failed | " + ex.getMessage());
+            filterChain.doFilter(request, response);
         } catch (UserNotLoggedInException ex) {
             log.info("Authentication failed | User already logged in");
             RequestUtils.handleException(response, ex.getMessage());

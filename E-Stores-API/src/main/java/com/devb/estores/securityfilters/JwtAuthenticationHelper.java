@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @Slf4j
@@ -36,10 +37,14 @@ public class JwtAuthenticationHelper {
         }
     }
 
-    public UserDetails authenticateToken(String token, String deviceId, String browserName, String secChUaPlatform, String secChUaMobile, String userAgent) {
+    public UserDetails authenticateToken(String token, String deviceId, String browserName, String secChUaPlatform, String secChUaMobile, String userAgent) throws InvalidJwtException {
         log.info("Extracting credentials...");
 
         Claims claims = jwtService.extractClaims(token);
+
+        if(claims == null)
+            throw new InvalidJwtException("Failed to extract claims");
+
         String username = jwtService.getUsername(claims);
         List<String> roles = jwtService.getUserRoles(claims);
 
@@ -54,11 +59,11 @@ public class JwtAuthenticationHelper {
         String cachedJti = tokenIdService.getJti(username, deviceId, TokenType.REFRESH);
 
         log.info("Validating client hints and JTI");
-        if (!jti.equals(cachedJti) ||
-                !browserNameInToken.equals(browserName) ||
-                !secChUaMobileInToken.equals(secChUaMobile) ||
-                !secChUaPlatformInToken.equals(secChUaPlatform) ||
-                !userAgentInToken.equals(userAgent))
+        if (!Objects.equals(jti, cachedJti) ||
+                !Objects.equals(browserNameInToken, browserName) ||
+                !Objects.equals(secChUaMobileInToken, secChUaMobile) ||
+                !Objects.equals(secChUaPlatformInToken, secChUaPlatform) ||
+                !Objects.equals(userAgentInToken, userAgent))
             throw new InvalidJwtException("Failed to authenticate the refresh token, could not identify the token");
 
         log.info("user is valid");

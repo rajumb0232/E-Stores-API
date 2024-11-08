@@ -3,8 +3,6 @@ package com.devb.estores.securityfilters;
 import com.devb.estores.exceptions.InvalidJwtException;
 import com.devb.estores.exceptions.UserNotLoggedInException;
 import com.devb.estores.security.RequestUtils;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,14 +44,10 @@ public class AuthFilter extends OncePerRequestFilter {
             log.info("Authentication Successful");
 
             filterChain.doFilter(request, response);
-        } catch (ExpiredJwtException ex) {
-            RequestUtils.handleException(response, "Your AccessToken is expired, refresh your login");
-        } catch (JwtException ex) {
-            RequestUtils.handleException(response, "Authentication Failed | " + ex.getMessage());
         } catch (UserNotLoggedInException ex) {
             log.info("Authentication failed | User not logged in");
             RequestUtils.handleException(response, "User not logged in | send a refresh request or try again after clearing cookies");
-        }catch (InvalidJwtException ex) {
+        } catch (InvalidJwtException ex) {
             log.info("{} | invalid JWT used", ex.getMessage());
             RequestUtils.handleException(response, ex.getMessage());
         }

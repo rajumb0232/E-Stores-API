@@ -2,6 +2,7 @@ package com.devb.estores.security;
 
 import com.devb.estores.config.AppEnv;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -49,11 +50,16 @@ public class JwtService {
     // parsing JWT
 
     public Claims extractClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignatureKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignatureKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException e){
+            // Returning null to handle as per requirement
+            return null;
+        }
     }
 
     public String getUsername(Claims claims) {
