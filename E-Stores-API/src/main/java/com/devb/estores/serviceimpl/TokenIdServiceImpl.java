@@ -116,6 +116,7 @@ public class TokenIdServiceImpl implements TokenIdService {
         }
 
         this.evictCachesForListOfIds(ids);
+        tokenIdRepo.deleteAll(ids);
     }
 
     @Override
@@ -123,6 +124,7 @@ public class TokenIdServiceImpl implements TokenIdService {
     public void deleteAllIds(String username) {
         List<TokenIdentification> ids = tokenIdRepo.findAllByUsername(username);
         this.evictCachesForListOfIds(ids);
+        tokenIdRepo.deleteAll(ids);
     }
 
     private void evictCachesForListOfIds(List<TokenIdentification> ids) {
@@ -134,6 +136,5 @@ public class TokenIdServiceImpl implements TokenIdService {
             }
             log.info("Evicted {} token from cache for key: {}", id.getTokenType().name(), key);
         });
-        tokenIdRepo.deleteAll(ids);
     }
 }
