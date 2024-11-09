@@ -41,6 +41,8 @@ server:
 #Application Configuration
 app:
   base-url: /api/fkv1
+  domain: ${DOMAIN}
+  is-https: ${IS_HTTPS}
   jwt:
     secret: ${JWT_SECRET}
     access-expiration-seconds: 3600

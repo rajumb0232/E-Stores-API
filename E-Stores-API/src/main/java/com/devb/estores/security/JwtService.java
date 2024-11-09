@@ -1,11 +1,14 @@
 package com.devb.estores.security;
 
 import com.devb.estores.config.AppEnv;
+import com.devb.estores.exceptions.InvalidJwtException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 
 
 @Slf4j
@@ -49,11 +53,23 @@ public class JwtService {
     // parsing JWT
 
     public Claims extractClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignatureKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignatureKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException | IllegalArgumentException e){
+            // Returning null to handle as per requirement
+            return null;
+        }
+    }
+
+    public Claims extractClaimsOrThrow(String token) throws InvalidJwtException {
+        Claims claims = extractClaims(token);
+        if(claims == null)
+            throw new InvalidJwtException("Failed to parse the token");
+        return claims;
     }
 
     public String getUsername(Claims claims) {

@@ -17,13 +17,13 @@ public interface AuthService {
 
     HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent);
 
-    void logout(String refreshToken, String accessToken);
+    HttpHeaders logout(String accessToken);
 
     HttpHeaders invalidateTokens();
 
     AuthResponse refreshLogin(String refreshToken, String accessToken);
 
-    void revokeAllOtherTokens(String refreshToken, String accessToken);
+    void revokeAllOtherTokens(String accessToken, String deviceId);
 
     void revokeAllTokens();
 }
