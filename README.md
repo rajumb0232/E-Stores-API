@@ -18,7 +18,7 @@ This project is a backend REST API for an e-commerce platform. It enables seller
 ## Technologies
 
 - Java 21
-- Spring Boot 3.3.3
+- Spring Boot 3.3.x
 - Maven 3.8.x
 - PostgreSQL & MongoDB
 - Spring Test 

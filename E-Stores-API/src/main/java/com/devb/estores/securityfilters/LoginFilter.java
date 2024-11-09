@@ -1,6 +1,7 @@
 package com.devb.estores.securityfilters;
 
 import com.devb.estores.exceptions.UserAlreadyLoggedInException;
+import com.devb.estores.security.RequestUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +28,7 @@ public class LoginFilter extends OncePerRequestFilter {
             log.info("Login request is authentic");
         }catch (UserAlreadyLoggedInException e){
             log.info("Failed to login, user already logged in");
-            FilterHelper.handleException(response, e.getMessage());
+            RequestUtils.handleException(response, e.getMessage());
         }
         filterChain.doFilter(request, response);
     }

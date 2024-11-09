@@ -102,4 +102,10 @@ public class AuthExceptionHandlers {
         log.error(ex.getMessage()+" | "+"Invalid User role specified");
         return errorResponse.structure(HttpStatus.BAD_REQUEST, ex.getMessage(), "Invalid User role specified");
     }
+
+    @ExceptionHandler(InvalidJwtException.class)
+        public ResponseEntity<ErrorStructure<String>> handleInvalidJwtException(InvalidJwtException ex) {
+        log.error("{} | Invalid JWT used", ex.getMessage());
+        return errorResponse.structure(HttpStatus.FORBIDDEN, ex.getMessage(), "Invalid JWT used");
+        }
 }

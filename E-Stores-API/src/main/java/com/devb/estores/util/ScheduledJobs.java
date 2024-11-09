@@ -1,24 +1,45 @@
 package com.devb.estores.util;
 
+import com.devb.estores.repository.TokenIdentificationRepo;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 @Component
 @AllArgsConstructor
+@Slf4j
 public class ScheduledJobs {
 
-//    private AccessTokenRepo accessTokenRepo;
-//    private RefreshTokenRepo refreshTokenRepo;
+    private final TokenIdentificationRepo tokenIdRepo;
 
-//    @Scheduled(fixedDelay = 60 * 60 * 1000l)
-//    public void deleteAllExpiredAccessTokens() {
-//        List<AccessToken> ats = accessTokenRepo.findAllByExpirationBefore(LocalDateTime.now());
-//        if(ats!=null && !ats.isEmpty()) accessTokenRepo.deleteAll(ats);
-//    }
-//
-//    @Scheduled(fixedDelay = 60 * 60 * 1000l)
-//    public void deleteAllExpiredRefreshTokens() {
-//        List<FingerPrint> rts =  refreshTokenRepo.findAllByExpirationBefore(LocalDateTime.now());
-//        if(rts!=null && !rts.isEmpty()) refreshTokenRepo.deleteAll(rts);
-//    }
+    @Scheduled(fixedRate = 60 * 60 * 1000L)
+    public void deleteAllExpiredTokenIds() {
+        log.info("Deleting the token Id's in batch");
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            int batchSize = 1000;
+            int deletedCount = 0;
+            int page = 0;
+
+            do {
+                var pageOfTokens = tokenIdRepo.findByExpirationBefore(now, PageRequest.of(page, batchSize));
+
+                if (!pageOfTokens.isEmpty()) {
+                    tokenIdRepo.deleteAll(pageOfTokens);
+                    deletedCount = pageOfTokens.getNumberOfElements();
+                    log.info("Deleted {} expired token Id's in this batch.", deletedCount);
+                }
+
+                page++;
+            } while (deletedCount == batchSize);
+
+            log.info("Completed deleting expired token Id's at {}", now);
+        } catch (Exception e) {
+            log.error("Error occurred while deleting expired token Id's: ", e);
+        }
+    }
 }
