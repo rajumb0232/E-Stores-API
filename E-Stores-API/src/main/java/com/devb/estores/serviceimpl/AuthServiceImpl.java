@@ -15,6 +15,7 @@ import com.devb.estores.requestdto.AuthRequest;
 import com.devb.estores.requestdto.UserRequest;
 import com.devb.estores.responsedto.AuthResponse;
 import com.devb.estores.responsedto.UserResponse;
+import com.devb.estores.security.AuthUtils;
 import com.devb.estores.security.TokenPayload;
 import com.devb.estores.security.JwtService;
 import com.devb.estores.security.RequestUtils;
@@ -22,7 +23,6 @@ import com.devb.estores.service.AuthService;
 import com.devb.estores.service.TokenIdService;
 import com.devb.estores.util.CookieManager;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -54,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
     private final CacheService cacheService;
     private final TokenIdService tokenIdService;
     private final UserMapper userMapper;
+    private final AuthUtils authUtils;
 
 
     @Override
@@ -199,14 +199,12 @@ public class AuthServiceImpl implements AuthService {
         if (refreshToken == null) throw new UserNotLoggedInException(FAILED_REFRESH);
 
         Claims claims = jwtService.extractClaimsOrThrow(refreshToken);
-        String username = jwtService.getUsername(claims);
         Date refreshExpiration = jwtService.getExpiry(claims);
 
         Claims accessClaims = jwtService.extractClaimsOrThrow(accessToken);
         Date accessExpiration = jwtService.getExpiry(accessClaims);
 
-        User user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(FAILED_REFRESH));
+        User user = authUtils.getCurrentUser();
 
         /* Calculating new Access and refresh Expiration if the access token is present,
         if not present or not valid the accessExpiration stays null, in that case the default expiration
@@ -230,7 +228,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public HttpHeaders logout(String accessToken) {
         Claims claims = jwtService.extractClaimsOrThrow(accessToken);
-        String username = jwtService.getUsername(claims);
+        String username = authUtils.getCurrentUsername();
         String deviceId = jwtService.getJwtId(claims);
 
         /* Deleting the JTI in cache and database
@@ -254,16 +252,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void revokeAllOtherTokens(String accessToken, String deviceId) {
-        Claims claims = jwtService.extractClaimsOrThrow(accessToken);
-        String username = jwtService.getUsername(claims);
-
+        String username = authUtils.getCurrentUsername();
         tokenIdService.deleteAllOtherIds(username, deviceId);
     }
 
     @Override
     public void revokeAllTokens() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
+        String username = authUtils.getCurrentUsername();
         tokenIdService.deleteAllIds(username);
     }
 
