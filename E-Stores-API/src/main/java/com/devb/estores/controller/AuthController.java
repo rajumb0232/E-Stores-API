@@ -53,13 +53,11 @@ public class AuthController extends ResponseEntityExceptionHandler {
 
     @PostMapping("/login")
     public ResponseEntity<ResponseStructure<AuthResponse>> login(@RequestBody AuthRequest authRequest,
-                                                                 @CookieValue(name = "rt", required = false) String refreshToken,
-                                                                 @CookieValue(name = "at", required = false) String accessToken,
                                                                  @RequestHeader(value = "sec-ch-ua", required = false) String secChUa,
                                                                  @RequestHeader(value = "sec-ch-ua-platform", required = false) String secChUaPlatform,
                                                                  @RequestHeader(value = "sec-ch-ua-mobile", required = false) String secChUaMobile,
                                                                  @RequestHeader(value = "User-Agent", required = false) String userAgent) {
-        AuthResponse response = authService.login(authRequest, refreshToken, accessToken);
+        AuthResponse response = authService.login(authRequest);
         HttpHeaders headers = authService.grantAccess(response, secChUa, secChUaPlatform, secChUaMobile, userAgent);
         return responseBuilder.success(HttpStatus.OK, headers, "Login Successful", response);
     }

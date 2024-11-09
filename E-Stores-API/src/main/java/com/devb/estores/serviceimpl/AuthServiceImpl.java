@@ -108,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken) {
+    public AuthResponse login(AuthRequest authRequest) {
         // Authenticating user
         User user = this.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
 
