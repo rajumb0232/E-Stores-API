@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Verification OTP</title>
+    <style>
+        :root {
+            --primary-color: #f9a825;
+            --text-color: #1e1e1e;
+            --font-family: Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fff;
+            font-family: var(--font-family);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+        }
+
+        .message {
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 12px 24px;
+            display: inline-block;
+            border-radius: 4px;
+            margin-bottom: 24px;
+        }
+
+        .note {
+            font-size: 14px;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+
+        .note-label {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Verification OTP</h1>
+    <p class="message">Please find the OTP given below and verify,</p>
+    <div class="otp-code" th:text="${otp}"></div>
+    <p class="note">
+        <span class="note-label">Note:</span>
+        The given OTP is only valid for 5 minutes.
+    </p>
+    <div class="footer">
+        <p>Thank you,</p>
+        <p>E Stores</p>
+    </div>
+</div>
+</body>
+</html>
