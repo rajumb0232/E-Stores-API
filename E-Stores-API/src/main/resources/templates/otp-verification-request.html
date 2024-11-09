@@ -1,89 +1,70 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Verification OTP</title>
-    <style>
-        :root {
-            --primary-color: #f9a825;
-            --text-color: #1e1e1e;
-            --font-family: Arial, sans-serif;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: #fff;
-            font-family: var(--font-family);
-            color: var(--text-color);
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .title {
-            font-size: 24px;
-            margin-bottom: 16px;
-            color: var(--primary-color);
-        }
-
-        .message {
-            font-size: 16px;
-            margin-bottom: 24px;
-        }
-
-        .otp-code {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-            padding: 12px 24px;
-            display: inline-block;
-            border-radius: 4px;
-            margin-bottom: 24px;
-        }
-
-        .note {
-            font-size: 14px;
-            font-style: italic;
-            margin-bottom: 40px;
-        }
-
-        .note-label {
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-    </style>
 </head>
-<body>
-<div class="container">
-    <h1 class="title">Verification OTP</h1>
-    <p class="message">Please find the OTP given below and verify,</p>
-    <div class="otp-code" th:text="${otp}"></div>
-    <p class="note">
-        <span class="note-label">Note:</span>
-        The given OTP is only valid for 5 minutes.
-    </p>
-    <div class="footer">
-        <p>Thank you,</p>
-        <p>E Stores</p>
-    </div>
-</div>
+<body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif;">
+<!-- Main Table -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f7f7f7; padding: 20px;">
+    <tr>
+        <td align="center">
+            <!-- Content Table -->
+            <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <!-- Header -->
+                <tr>
+                    <td align="center" style="padding: 40px 20px 20px 20px;">
+                        <h1 style="margin: 0; font-size: 24px; color: #f9a825; font-weight: bold;">
+                            Verification OTP
+                        </h1>
+                    </td>
+                </tr>
+
+                <!-- Message -->
+                <tr>
+                    <td align="center" style="padding: 0 20px 20px 20px;">
+                        <p style="margin: 0; font-size: 16px; color: #1e1e1e; line-height: 24px;">
+                            Please find the OTP given below and verify,
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- OTP Code -->
+                <tr>
+                    <td align="center" style="padding: 0 20px 20px 20px;">
+                        <div style="display: inline-block; padding: 16px 48px; background-color: #ffffff; border: 2px solid #f9a825; border-radius: 4px;">
+                            <span th:text="${otp}" style="font-size: 32px; color: #f9a825; font-weight: bold; letter-spacing: 2px;"></span>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Note -->
+                <tr>
+                    <td align="center" style="padding: 0 20px 40px 20px;">
+                        <p style="margin: 0; font-size: 14px; color: #1e1e1e; font-style: italic;">
+                            <span style="font-weight: bold; color: #f9a825;">Note:</span>
+                            The given OTP is only valid for 5 minutes.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="padding: 20px 20px 40px 20px; border-top: 1px solid #f0f0f0;">
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td style="color: #1e1e1e; font-size: 12px; line-height: 18px;">
+                                    <p style="margin: 0 0 4px 0;">Thank you</p>
+                                    <p style="margin: 0;">E Stores</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
