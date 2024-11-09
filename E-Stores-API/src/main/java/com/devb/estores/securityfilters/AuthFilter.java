@@ -28,8 +28,10 @@ public class AuthFilter extends OncePerRequestFilter {
         String deviceId = RequestUtils.extractDeviceId(request.getCookies());
         log.info("Is device Id found? => {}", deviceId != null);
 
-        if (accessToken == null) throw new UserNotLoggedInException("Failed to authenticate the user");
         try {
+            if (accessToken == null)
+                throw new UserNotLoggedInException("Failed to authenticate the user");
+
             String browserName = RequestUtils.extractBrowserName(request.getHeader(RequestUtils.SEC_CH_UA));
             UserDetails userDetails = authenticationHelper.authenticateToken(accessToken,
                     deviceId,

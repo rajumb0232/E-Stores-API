@@ -28,8 +28,9 @@ public class RefreshFilter extends OncePerRequestFilter {
         String deviceId = RequestUtils.extractDeviceId(request.getCookies());
         log.info("Is device Id found? => {}", deviceId != null);
 
-        if (rt == null) throw new UserNotLoggedInException("User not logged in | no credentials found");
         try {
+            if (rt == null)
+                throw new UserNotLoggedInException("User not logged in | no credentials found");
             String browserName = RequestUtils.extractBrowserName(request.getHeader(RequestUtils.SEC_CH_UA));
             UserDetails userDetails = authenticationHelper.authenticateToken(rt,
                     deviceId,
