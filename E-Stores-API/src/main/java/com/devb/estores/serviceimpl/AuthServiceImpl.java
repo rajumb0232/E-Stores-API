@@ -268,34 +268,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void sendOTPToMailId(User user, int otp) throws MessagingException {
-        String text =
-                "<!DOCTYPE html>\n" +
-                        "<html lang=\"en\">\n" +
-                        "<head>\n" +
-                        "    <meta charset=\"UTF-8\">\n" +
-                        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                        "    <title>Mail</title>\n" +
-                        "</head>\n" +
-                        "<style>\n" +
-                        "    *{\n" +
-                        "        font-family: Verdana, Geneva, Tahoma, sans-serif\n" +
-                        "    }\n" +
-                        "    h4 {\n" +
-                        "        color: rgb(0, 98, 255);\n" +
-                        "    }\n" +
-                        "</style>\n" +
-                        "<body>\n" +
-                        "    <div>\n" +
-                        "        <h3>Hurrey!!! You are just few steps away!</h3>\n" +
-                        "        <p>Please use this OTP given below for further verification.</p>\n" +
-                        "        <h4>" + otp + "</h4>\n" +
-                        "        <br> <br> <br>\n" +
-                        "        <p>with best regards</p>\n" +
-                        "        <p>E Stores</p>\n" +
-                        "    </div>\n" +
-                        "</body>\n" +
-                        "</html>";
-
+        String text = mailService.createHtmlFor("otp-verification-request", Map.of("otp", otp));
         mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
                 .subject("Verify your email for E Stores")
@@ -306,15 +279,10 @@ public class AuthServiceImpl implements AuthService {
     private void sendConfirmationMail(User user) throws MessagingException {
         mailService.sendMail(MessageData.builder()
                 .to(user.getEmail())
-                .subject("Welcome to Flipkart family")
+                .subject("Welcome to E Stores family")
                 .sentDate(new Date())
-                .text(
-                        "<b>Congratulations, your now a part of flipkart family, your email verification is " +
-                                "successfully completed</b>" +
-                                "<br><br>" +
-                                "With Best Regards,<br>" +
-                                "Flipkart"
-                )
+                .text(mailService.createHtmlFor("simple-message",
+                        Map.of("message", "Congratulations, your now a part of E Stores family, your email verification is successfully completed")))
                 .build());
     }
 }

@@ -3,15 +3,15 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Verification OTP</title>
+    <title>E Stores</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+<body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: Arial, sans-serif;">
 <!-- Main Table -->
-<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f7f7f7; padding: 20px; min-width: 100%; table-layout: fixed;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f7f7f7; padding: 20px;">
     <tr>
-        <td align="center" valign="top">
+        <td align="center">
             <!-- Content Table -->
-            <table border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; width: 100%;">
+            <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <!-- Logo/Brand Section -->
                 <tr>
                     <td align="center" style="padding: 40px 40px 20px 40px;">
@@ -25,42 +25,16 @@
                 <tr>
                     <td align="center" style="padding: 0 40px 30px 40px;">
                         <h2 style="margin: 0; font-size: 24px; color: #1e1e1e; font-weight: bold;">
-                            Verification OTP
+                            Registration Successful
                         </h2>
                     </td>
                 </tr>
 
-                <!-- Message -->
+                <!-- Message Content -->
                 <tr>
-                    <td align="center" style="padding: 0 40px 30px 40px;">
-                        <p style="margin: 0; font-size: 16px; color: #4a4a4a; line-height: 24px;">
-                            Please use the verification code below to complete your verification
-                        </p>
+                    <td align="left" style="padding: 20px 40px;">
+                        <div th:utext="${message}" style="color: #1e1e1e; font-size: 16px; line-height: 1.6;"></div>
                     </td>
-                </tr>
-
-                <!-- OTP Code -->
-                <tr>
-                    <td align="center" style="padding: 0 40px 30px 40px;">
-                        <div style="display: inline-block; padding: 20px 48px; background-color: #fafafa; border: 2px solid #f9a825; border-radius: 8px;">
-                            <span th:text="${otp}" style="font-size: 36px; color: #f9a825; font-weight: bold; letter-spacing: 4px; font-family: 'Courier New', monospace;"></span>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- Note -->
-                <tr>
-                    <td align="center" style="padding: 0 40px 40px 40px;">
-                        <p style="margin: 0; font-size: 14px; color: #666666; font-style: italic; line-height: 20px;">
-                            <span style="font-weight: bold; color: #f9a825;">Note:</span>
-                            This verification code will expire in 5 minutes.
-                        </p>
-                    </td>
-                </tr>
-
-                <!-- Divider -->
-                <tr>
-                    <td style="border-top: 1px solid #f0f0f0; margin: 0 40px;"></td>
                 </tr>
 
                 <!-- Footer -->
@@ -91,13 +65,6 @@
                             </tr>
                         </table>
                     </td>
-                </tr>
-            </table>
-
-            <!-- Spacing for email clients -->
-            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
-                <tr>
-                    <td style="height: 20px;"></td>
                 </tr>
             </table>
         </td>
