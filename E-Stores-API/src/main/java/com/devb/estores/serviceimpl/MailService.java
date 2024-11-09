@@ -8,12 +8,17 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
 public class MailService {
 
     private final JavaMailSender javaMailSender;
+    private final TemplateEngine templateEngine;
 
     @Async
     public void sendMail(MessageData messageData) throws MessagingException {
@@ -25,5 +30,11 @@ public class MailService {
         helper.setSentDate(messageData.getSentDate());
         helper.setText(messageData.getText(), true);
         javaMailSender.send(message);
+    }
+
+    public String createHtmlFor(String template, Map<String, Object> variables) {
+        Context context =  new Context();
+        context.setVariables(variables);
+        return templateEngine.process(template, context);
     }
 }
