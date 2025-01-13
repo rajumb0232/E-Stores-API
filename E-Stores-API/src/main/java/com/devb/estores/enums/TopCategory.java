@@ -1,9 +1,14 @@
 package com.devb.estores.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Getter
+@AllArgsConstructor
 public enum TopCategory {
     ELECTRONICS("Electronics", Arrays.asList(
             SubCategory.HOME_APPLIANCES,
@@ -51,16 +56,4 @@ public enum TopCategory {
     private final String name;
     private final List<SubCategory> subCategories;
 
-    TopCategory(String name, List<SubCategory> subCategories) {
-        this.name = name;
-        this.subCategories = subCategories;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public List<SubCategory> getSubCategories() {
-        return subCategories;
-    }
 }
