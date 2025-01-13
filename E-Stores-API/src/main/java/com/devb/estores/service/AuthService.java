@@ -13,7 +13,7 @@ public interface AuthService {
 
     UserResponse verifyUserEmail(OtpModel otpModel);
 
-    AuthResponse login(AuthRequest authRequest, String refreshToken, String accessToken);
+    AuthResponse login(AuthRequest authRequest);
 
     HttpHeaders grantAccess(AuthResponse authResponse, String secChUa, String secChUaPlatform, String secChUaMobile, String userAgent);
 
